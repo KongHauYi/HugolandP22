@@ -73,8 +73,9 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin inline-block w-8 h-8 sm:w-12 sm:h-12 border-4 border-purple-400 border-t-transparent rounded-full mb-4"></div>
-          <p className="text-white text-lg sm:text-xl font-semibold">Loading Hugoland...</p>
+          <div className="animate-spin inline-block w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full mb-6"></div>
+          <p className="text-white text-xl font-semibold">Loading Hugoland...</p>
+          <p className="text-purple-300 text-sm mt-2">Preparing your adventure...</p>
         </div>
       </div>
     );
@@ -99,38 +100,55 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
         <FloatingIcons />
-        <div className="text-center max-w-md mx-auto relative z-10">
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">🏰 Welcome to Hugoland! 🗡️</h1>
-            <p className="text-purple-300 text-base sm:text-lg mb-4 sm:mb-6">
+        <div className="text-center max-w-lg mx-auto relative z-10">
+          <div className="mb-8">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
+              🏰 Welcome to<br />Hugoland! 🗡️
+            </h1>
+            <p className="text-purple-300 text-lg sm:text-xl mb-8 leading-relaxed">
               The ultimate fantasy adventure game where knowledge is your greatest weapon!
             </p>
-            <div className="bg-black/30 p-3 sm:p-4 rounded-lg border border-purple-500/50 mb-4 sm:mb-6">
-              <h3 className="text-white font-bold mb-2 text-sm sm:text-base">🎮 What awaits you:</h3>
-              <ul className="text-purple-200 text-xs sm:text-sm space-y-1">
-                <li>• Answer trivia questions to defeat enemies</li>
-                <li>• Collect powerful weapons and armor</li>
-                <li>• Mine gems and find rare shiny gems</li>
-                <li>• Unlock achievements and build knowledge streaks</li>
-                <li>• Explore multiple game modes and challenges</li>
-                <li>• Progress through infinite zones of adventure</li>
-                <li>• Discover ancient relics in the Yojef Market</li>
-                <li>• Level up and unlock powerful skills</li>
-                <li>• Earn daily rewards and offline progress</li>
-                <li>• Grow plants in the Garden of Growth</li>
-              </ul>
+            
+            <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl border border-purple-500/30 mb-8">
+              <h3 className="text-white font-bold mb-4 text-lg">🎮 What awaits you:</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-purple-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400">•</span>
+                  <span>Answer trivia questions to defeat enemies</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-400">•</span>
+                  <span>Collect powerful weapons and armor</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  <span>Mine gems and find rare treasures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-400">•</span>
+                  <span>Unlock achievements and streaks</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-red-400">•</span>
+                  <span>Explore multiple game modes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-cyan-400">•</span>
+                  <span>Progress through infinite zones</span>
+                </div>
+              </div>
             </div>
           </div>
           
           <button
             onClick={() => setShowWelcome(false)}
-            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-lg hover:from-purple-500 hover:to-indigo-500 transition-all duration-200 flex items-center gap-3 justify-center text-base sm:text-lg"
+            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl hover:from-purple-500 hover:to-indigo-500 transition-all duration-300 transform hover:scale-105 flex items-center gap-3 justify-center text-lg shadow-lg shadow-purple-500/25"
           >
-            <Play className="w-5 h-5 sm:w-6 sm:h-6" />
+            <Play className="w-6 h-6" />
             Start Your Adventure
           </button>
           
-          <p className="text-gray-400 text-xs sm:text-sm mt-4">
+          <p className="text-gray-400 text-sm mt-4">
             Begin your journey in the magical world of Hugoland
           </p>
         </div>
@@ -180,7 +198,7 @@ function App() {
         );
       case 'stats':
         return (
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-6">
             <PlayerStats
               playerStats={gameState.playerStats}
               zone={gameState.zone}
@@ -193,62 +211,71 @@ function App() {
 
             {/* Garden Status */}
             {gameState.gardenOfGrowth.isPlanted && (
-              <div className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 p-3 sm:p-4 rounded-lg border border-green-500/50">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-white font-bold text-sm sm:text-base">Garden of Growth</h3>
-                  <span className="text-2xl">🌱</span>
+              <div className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 p-4 sm:p-6 rounded-xl border border-green-500/50 backdrop-blur-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                    <span className="text-2xl">🌱</span>
+                    Garden of Growth
+                  </h3>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-green-400 font-bold text-sm">
-                    {gameState.gardenOfGrowth.growthCm.toFixed(1)}cm
-                  </span>
-                  <div className="flex-1">
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min((gameState.gardenOfGrowth.growthCm / gameState.gardenOfGrowth.maxGrowthCm) * 100, 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-300 mt-1">
-                      +{gameState.gardenOfGrowth.totalGrowthBonus.toFixed(1)}% all stats
-                    </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="text-center bg-black/20 p-3 rounded-lg">
+                    <p className="text-green-300 font-semibold text-sm">Growth</p>
+                    <p className="text-white text-xl font-bold">{gameState.gardenOfGrowth.growthCm.toFixed(1)}cm</p>
                   </div>
-                  <span className="text-blue-400 font-semibold text-sm">
-                    {gameState.gardenOfGrowth.waterHoursRemaining.toFixed(1)}h water
-                  </span>
+                  <div className="text-center bg-black/20 p-3 rounded-lg">
+                    <p className="text-blue-300 font-semibold text-sm">Stat Bonus</p>
+                    <p className="text-white text-xl font-bold">+{gameState.gardenOfGrowth.totalGrowthBonus.toFixed(1)}%</p>
+                  </div>
+                  <div className="text-center bg-black/20 p-3 rounded-lg">
+                    <p className="text-cyan-300 font-semibold text-sm">Water Left</p>
+                    <p className="text-white text-xl font-bold">{gameState.gardenOfGrowth.waterHoursRemaining.toFixed(1)}h</p>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <div className="w-full bg-gray-700 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min((gameState.gardenOfGrowth.growthCm / gameState.gardenOfGrowth.maxGrowthCm) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-center text-gray-300 text-sm mt-2">
+                    Progress to maximum growth ({gameState.gardenOfGrowth.maxGrowthCm}cm)
+                  </p>
                 </div>
               </div>
             )}
             
             {/* Knowledge Streak Display */}
             {gameState.knowledgeStreak.current > 0 && (
-              <div className="bg-gradient-to-r from-yellow-900 to-orange-900 p-3 sm:p-4 rounded-lg border border-yellow-500/50">
+              <div className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 p-4 sm:p-6 rounded-xl border border-yellow-500/50 backdrop-blur-sm">
                 <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className="text-xl sm:text-2xl">🔥</span>
-                    <h3 className="text-yellow-400 font-bold text-sm sm:text-lg">Knowledge Streak!</h3>
+                  <div className="flex items-center justify-center gap-3 mb-3">
+                    <span className="text-3xl animate-pulse">🔥</span>
+                    <h3 className="text-yellow-400 font-bold text-xl">Knowledge Streak!</h3>
                   </div>
-                  <p className="text-white text-xs sm:text-sm">
+                  <p className="text-white text-lg mb-2">
                     {gameState.knowledgeStreak.current} correct answers in a row
                   </p>
-                  <p className="text-yellow-300 text-xs sm:text-sm">
+                  <p className="text-yellow-300 font-semibold">
                     +{Math.round((gameState.knowledgeStreak.multiplier - 1) * 100)}% reward bonus
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="text-center space-y-3 sm:space-y-4">
+            <div className="text-center space-y-6">
               <button
                 onClick={startCombat}
                 disabled={gameState.playerStats.hp <= 0 || (gameState.gameMode.current === 'survival' && gameState.gameMode.survivalLives <= 0)}
-                className={`w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-bold text-white transition-all duration-200 transform flex items-center gap-3 justify-center text-sm sm:text-base ${
+                className={`w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-white transition-all duration-300 transform flex items-center gap-3 justify-center text-lg shadow-lg ${
                   gameState.playerStats.hp > 0 && (gameState.gameMode.current !== 'survival' || gameState.gameMode.survivalLives > 0)
-                    ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 hover:scale-105 shadow-lg hover:shadow-green-500/25'
-                    : 'bg-gray-600 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 hover:scale-105 shadow-green-500/25'
+                    : 'bg-gray-600 cursor-not-allowed opacity-50'
                 }`}
               >
-                <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Play className="w-6 h-6" />
                 {gameState.playerStats.hp <= 0 
                   ? 'You are defeated!' 
                   : gameState.gameMode.current === 'survival' && gameState.gameMode.survivalLives <= 0
@@ -257,47 +284,49 @@ function App() {
               </button>
               
               {(gameState.playerStats.hp <= 0 || (gameState.gameMode.current === 'survival' && gameState.gameMode.survivalLives <= 0)) && (
-                <p className="text-red-400 mt-2 text-xs sm:text-sm">
-                  {gameState.gameMode.current === 'survival' && gameState.gameMode.survivalLives <= 0
-                    ? 'Change game mode or reset to continue!'
-                    : 'Visit the shop to get better equipment and try again!'}
-                </p>
+                <div className="bg-red-900/30 p-4 rounded-lg border border-red-500/50">
+                  <p className="text-red-400 text-sm">
+                    {gameState.gameMode.current === 'survival' && gameState.gameMode.survivalLives <= 0
+                      ? 'Change game mode or reset to continue!'
+                      : 'Visit the shop to get better equipment and try again!'}
+                  </p>
+                </div>
               )}
               
               {gameState.isPremium && (
-                <div className="bg-gradient-to-r from-yellow-600 to-yellow-500 p-3 rounded-lg">
-                  <div className="flex items-center justify-center gap-2">
-                    <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    <span className="text-white font-bold text-xs sm:text-sm">🎉 PREMIUM MEMBER UNLOCKED! 🎉</span>
+                <div className="bg-gradient-to-r from-yellow-600/20 to-yellow-500/20 p-4 rounded-xl border border-yellow-500/50 backdrop-blur-sm">
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <Crown className="w-6 h-6 text-yellow-400" />
+                    <span className="text-white font-bold text-lg">🎉 PREMIUM MEMBER! 🎉</span>
                   </div>
-                  <p className="text-yellow-100 text-xs mt-1">
+                  <p className="text-yellow-100 text-sm">
                     You've reached Zone 50! Enjoy exclusive rewards and special features!
                   </p>
                 </div>
               )}
               
-              <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3">
+              <div className="flex flex-wrap justify-center gap-3">
                 <button
                   onClick={() => setCurrentModal('gameMode')}
-                  className="px-3 sm:px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 transition-all duration-200 flex items-center gap-2 justify-center text-xs sm:text-sm"
+                  className="px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 transition-all duration-200 flex items-center gap-2 text-sm shadow-md"
                 >
-                  <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <Play className="w-4 h-4" />
                   Game Mode
                 </button>
                 
                 <button
                   onClick={() => setCurrentModal('dailyRewards')}
-                  className="px-3 sm:px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 transition-all duration-200 flex items-center gap-2 justify-center text-xs sm:text-sm"
+                  className="px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 transition-all duration-200 flex items-center gap-2 text-sm shadow-md"
                 >
-                  <Gift className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <Gift className="w-4 h-4" />
                   Daily Rewards
                 </button>
                 
                 <button
                   onClick={handleResetGame}
-                  className="px-3 sm:px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 transition-all duration-200 flex items-center gap-2 justify-center text-xs sm:text-sm"
+                  className="px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 transition-all duration-200 flex items-center gap-2 text-sm shadow-md"
                 >
-                  <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <RotateCcw className="w-4 h-4" />
                   Reset Game
                 </button>
               </div>
@@ -436,31 +465,24 @@ function App() {
       case 'resetConfirm':
         return (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-gradient-to-br from-red-900 to-gray-900 p-6 rounded-lg border border-red-500/50 max-w-md w-full">
+            <div className="bg-gradient-to-br from-red-900 to-gray-900 p-6 rounded-xl border border-red-500/50 max-w-md w-full backdrop-blur-sm">
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <RotateCcw className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-white font-bold text-xl mb-4">Reset Game?</h2>
                 <p className="text-gray-300 text-sm mb-6">
-                  Are you sure you want to reset your game? This will permanently delete all your progress, including:
+                  Are you sure you want to reset your game? This will permanently delete all your progress.
                 </p>
                 <div className="bg-black/30 p-3 rounded-lg mb-6 text-left">
-                  <ul className="text-red-300 text-sm space-y-1">
-                    <li>• All coins, gems, and shiny gems</li>
-                    <li>• All weapons, armor, and relics</li>
-                    <li>• Zone progress and achievements</li>
-                    <li>• Research levels and statistics</li>
-                    <li>• Collection book progress</li>
-                    <li>• Player tags and streaks</li>
-                    <li>• Character level and skills</li>
-                    <li>• Daily reward streaks</li>
-                    <li>• Garden of Growth progress</li>
+                  <p className="text-red-400 font-bold text-sm mb-2">This action cannot be undone!</p>
+                  <ul className="text-red-300 text-xs space-y-1">
+                    <li>• All coins, gems, and items will be lost</li>
+                    <li>• Zone progress and achievements will be reset</li>
+                    <li>• Research levels and statistics will be cleared</li>
+                    <li>• Character level and skills will be reset</li>
                   </ul>
                 </div>
-                <p className="text-red-400 font-bold text-sm mb-6">
-                  This action cannot be undone!
-                </p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setCurrentModal(null)}
@@ -492,23 +514,23 @@ function App() {
       <PWAInstallPrompt />
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-800 via-violet-800 to-purple-800 shadow-2xl relative z-10">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
-          <div className="flex items-center justify-between mb-3 sm:mb-6">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl lg:text-4xl font-bold text-white">
+      <div className="bg-gradient-to-r from-purple-800 via-violet-800 to-purple-800 shadow-2xl relative z-10 border-b border-purple-500/30">
+        <div className="container mx-auto px-4 py-4 sm:py-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                 🏰 Hugoland 🗡️
               </h1>
               {gameState.isPremium && (
-                <Crown className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-400 animate-pulse" />
+                <Crown className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-yellow-400 animate-pulse" />
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Only show bulk actions button when not in combat and not on menu page */}
               {!gameState.inCombat && currentView !== 'menu' && (
                 <button
                   onClick={() => setCurrentModal('bulkActions')}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all duration-200 text-sm shadow-md"
                 >
                   <Package2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Bulk</span>
@@ -517,7 +539,7 @@ function App() {
               {/* Hamburger Menu Button */}
               <button
                 onClick={() => setCurrentView('menu')}
-                className="flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                className="flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 text-sm shadow-md"
               >
                 <Menu className="w-4 h-4" />
                 <span className="hidden sm:inline">Menu</span>
@@ -527,22 +549,22 @@ function App() {
           
           {/* Quick Stats Bar - Hide during combat and on menu page */}
           {!gameState.inCombat && currentView !== 'menu' && (
-            <div className="flex justify-center items-center gap-2 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm">
+            <div className="flex justify-center items-center gap-4 mb-4 text-sm">
               <button
                 onClick={() => setCurrentModal('collection')}
-                className="flex items-center gap-1 text-indigo-300 hover:text-indigo-200 transition-colors"
+                className="flex items-center gap-2 text-indigo-300 hover:text-indigo-200 transition-colors px-3 py-1 rounded-lg hover:bg-white/10"
               >
-                <Package className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Collect</span>
+                <Package className="w-4 h-4" />
+                <span>Collection</span>
               </button>
 
               {gameState.dailyRewards.availableReward && (
                 <button
                   onClick={() => setCurrentModal('dailyRewards')}
-                  className="flex items-center gap-1 text-green-300 hover:text-green-200 transition-colors animate-pulse"
+                  className="flex items-center gap-2 text-green-300 hover:text-green-200 transition-colors animate-pulse px-3 py-1 rounded-lg hover:bg-white/10"
                 >
-                  <Gift className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span>Daily!</span>
+                  <Gift className="w-4 h-4" />
+                  <span>Daily Reward!</span>
                 </button>
               )}
             </div>
@@ -550,30 +572,32 @@ function App() {
           
           {/* Navigation - Disable during combat and hide on menu page */}
           {currentView !== 'menu' && (
-            <nav className="flex justify-center space-x-1 sm:space-x-2 overflow-x-auto pb-2">
-              {[
-                { id: 'stats', label: 'Hero', icon: User },
-                { id: 'research', label: 'Research', icon: Brain },
-                { id: 'shop', label: 'Shop', icon: Package },
-                { id: 'inventory', label: 'Inventory', icon: Shield },
-                { id: 'mining', label: 'Mining', icon: Pickaxe },
-              ].map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setCurrentView(id as GameView)}
-                  disabled={gameState.inCombat}
-                  className={`px-2 sm:px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm whitespace-nowrap ${
-                    currentView === id
-                      ? 'bg-white text-purple-800 shadow-lg'
-                      : gameState.inCombat
-                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                      : 'bg-purple-700 text-white hover:bg-purple-600 hover:scale-105'
-                  }`}
-                >
-                  <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden xs:inline">{label}</span>
-                </button>
-              ))}
+            <nav className="flex justify-center">
+              <div className="flex space-x-2 bg-black/20 p-2 rounded-xl backdrop-blur-sm border border-white/10">
+                {[
+                  { id: 'stats', label: 'Hero', icon: User },
+                  { id: 'research', label: 'Research', icon: Brain },
+                  { id: 'shop', label: 'Shop', icon: Package },
+                  { id: 'inventory', label: 'Inventory', icon: Shield },
+                  { id: 'mining', label: 'Mining', icon: Pickaxe },
+                ].map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setCurrentView(id as GameView)}
+                    disabled={gameState.inCombat}
+                    className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm whitespace-nowrap ${
+                      currentView === id
+                        ? 'bg-white text-purple-800 shadow-lg'
+                        : gameState.inCombat
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        : 'bg-purple-700 text-white hover:bg-purple-600 hover:scale-105'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden xs:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
             </nav>
           )}
 
@@ -582,7 +606,7 @@ function App() {
             <div className="flex justify-center">
               <button
                 onClick={() => setCurrentView('stats')}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-600 transition-all duration-200 shadow-md"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Game
@@ -593,8 +617,8 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 relative z-10">
-        <div className="max-w-4xl mx-auto">
+      <div className="container mx-auto px-4 py-6 sm:py-8 relative z-10">
+        <div className="max-w-6xl mx-auto">
           {renderCurrentView()}
         </div>
       </div>
