@@ -1,6 +1,6 @@
 import React from 'react';
 import { AdventureSkill } from '../types/game';
-import { Zap, Shield, SkipForward, Heart, Eye, TrendingUp, Dodge } from 'lucide-react';
+import { Zap, Shield, SkipForward, Heart, Eye, TrendingUp, Badge as Dodge } from 'lucide-react';
 
 interface AdventureSkillSelectionProps {
   availableSkills: AdventureSkill[];
