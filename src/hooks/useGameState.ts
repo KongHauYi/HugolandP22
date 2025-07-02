@@ -1,494 +1,204 @@
-import { useState, useCallback, useEffect } from 'react';
-import { GameState, PlayerStats, Inventory, Enemy, Weapon, Armor, ChestReward, Research, Achievement, CollectionBook, KnowledgeStreak, GameMode, Statistics, CheatSettings, Mining, RelicItem, PlayerTag, DailyRewards, DailyReward, ProgressionSystem, OfflineProgress, GardenOfGrowth, GameSettings } from '../types/game';
-import { generateWeapon, generateArmor, generateEnemy, generateMythicalWeapon, generateMythicalArmor, calculateResearchBonus, calculateResearchCost, getChestRarityWeights, generateRelicItem } from '../utils/gameUtils';
+import { useState, useEffect, useCallback } from 'react';
+import { GameState, Weapon, Armor, Enemy, ChestReward, RelicItem, Achievement, PlayerTag, DailyReward, MenuSkill, AdventureSkill } from '../types/game';
+import { generateWeapon, generateArmor, generateEnemy, generateRelicItem, getChestRarityWeights, calculateResearchBonus, calculateResearchCost } from '../utils/gameUtils';
 import { checkAchievements, initializeAchievements } from '../utils/achievements';
 import { checkPlayerTags, initializePlayerTags } from '../utils/playerTags';
 import AsyncStorage from '../utils/storage';
 
 const STORAGE_KEY = 'hugoland_game_state';
 
-const initialPlayerStats: PlayerStats = {
-  hp: 200,
-  maxHp: 200,
-  atk: 50,
-  def: 0,
-  baseAtk: 50,
-  baseDef: 0,
-  baseHp: 200,
-};
-
-const initialInventory: Inventory = {
-  weapons: [],
-  armor: [],
-  relics: [],
-  currentWeapon: null,
-  currentArmor: null,
-  equippedRelics: [],
-};
-
-const initialResearch: Research = {
-  atk: { level: 0, totalSpent: 0 },
-  def: { level: 0, totalSpent: 0 },
-  hp: { level: 0, totalSpent: 0 },
-};
-
-const initialCollectionBook: CollectionBook = {
-  weapons: {},
-  armor: {},
-  totalWeaponsFound: 0,
-  totalArmorFound: 0,
-  rarityStats: {
-    common: 0,
-    rare: 0,
-    epic: 0,
-    legendary: 0,
-    mythical: 0,
-  },
-};
-
-const initialKnowledgeStreak: KnowledgeStreak = {
-  current: 0,
-  best: 0,
-  multiplier: 1,
-};
-
-const initialGameMode: GameMode = {
-  current: 'normal',
-  speedModeActive: false,
-  survivalLives: 3,
-  maxSurvivalLives: 3,
-  timeAttackScore: 0,
-  timeAttackTimeLeft: 60,
-  bossProgress: 0,
-};
-
-const initialStatistics: Statistics = {
-  totalQuestionsAnswered: 0,
-  correctAnswers: 0,
-  totalPlayTime: 0,
-  zonesReached: 1,
-  itemsCollected: 0,
-  coinsEarned: 0,
-  gemsEarned: 0,
-  shinyGemsEarned: 0,
-  chestsOpened: 0,
-  accuracyByCategory: {},
-  sessionStartTime: new Date(),
-  totalDeaths: 0,
-  totalVictories: 0,
-  longestStreak: 0,
-  fastestVictory: 0,
-  totalDamageDealt: 0,
-  totalDamageTaken: 0,
-  itemsUpgraded: 0,
-  itemsSold: 0,
-  totalResearchSpent: 0,
-  averageAccuracy: 0,
-  revivals: 0,
-};
-
-const initialCheats: CheatSettings = {
-  infiniteCoins: false,
-  infiniteGems: false,
-  obtainAnyItem: false,
-};
-
-const initialMining: Mining = {
-  efficiency: 1,
-  tools: {
-    basic_pickaxe: false,
-    steel_pickaxe: false,
-    diamond_pickaxe: false,
-    mythical_pickaxe: false,
-  },
-  totalGemsMined: 0,
-  totalShinyGemsMined: 0,
-};
-
-const initialDailyRewards: DailyRewards = {
-  lastClaimDate: null,
-  currentStreak: 0,
-  maxStreak: 0,
-  availableReward: null,
-  rewardHistory: [],
-};
-
-const initialProgression: ProgressionSystem = {
-  level: 1,
-  experience: 0,
-  experienceToNext: 100,
-  skillPoints: 0,
-  unlockedSkills: [],
-  prestigeLevel: 0,
-  prestigePoints: 0,
-  masteryLevels: {},
-};
-
-const initialOfflineProgress: OfflineProgress = {
-  lastSaveTime: new Date(),
-  offlineCoins: 0,
-  offlineGems: 0,
-  offlineTime: 0,
-  maxOfflineHours: 8,
-};
-
-const initialGardenOfGrowth: GardenOfGrowth = {
-  isPlanted: false,
-  plantedAt: null,
-  lastWatered: null,
-  waterHoursRemaining: 0,
-  growthCm: 0,
-  totalGrowthBonus: 0,
-  seedCost: 5000,
-  waterCost: 1000,
-  maxGrowthCm: 100,
-};
-
-const initialSettings: GameSettings = {
-  colorblindMode: false,
-  darkMode: true,
-  language: 'en',
-  notifications: true,
-};
-
-const generateYojefMarketItems = (): RelicItem[] => {
-  const items: RelicItem[] = [];
-  const numItems = 3 + Math.floor(Math.random() * 3); // 3-5 items
-  
-  for (let i = 0; i < numItems; i++) {
-    items.push(generateRelicItem());
-  }
-  
-  return items;
-};
-
-const initialGameState: GameState = {
+const createInitialGameState = (): GameState => ({
   coins: 100,
   gems: 0,
   shinyGems: 0,
   zone: 1,
-  playerStats: initialPlayerStats,
-  inventory: initialInventory,
+  playerStats: {
+    hp: 100,
+    maxHp: 100,
+    atk: 20,
+    def: 10,
+    baseAtk: 20,
+    baseDef: 10,
+    baseHp: 100,
+  },
+  inventory: {
+    weapons: [],
+    armor: [],
+    relics: [],
+    currentWeapon: null,
+    currentArmor: null,
+    equippedRelics: [],
+  },
   currentEnemy: null,
   inCombat: false,
   combatLog: [],
-  research: initialResearch,
+  research: {
+    level: 0,
+    totalSpent: 0,
+    availableUpgrades: ['atk', 'def', 'hp'],
+  },
   isPremium: false,
   achievements: initializeAchievements(),
-  collectionBook: initialCollectionBook,
-  knowledgeStreak: initialKnowledgeStreak,
-  gameMode: initialGameMode,
-  statistics: initialStatistics,
-  cheats: initialCheats,
-  mining: initialMining,
+  collectionBook: {
+    weapons: {},
+    armor: {},
+    totalWeaponsFound: 0,
+    totalArmorFound: 0,
+    rarityStats: {
+      common: 0,
+      rare: 0,
+      epic: 0,
+      legendary: 0,
+      mythical: 0,
+    },
+  },
+  knowledgeStreak: {
+    current: 0,
+    best: 0,
+    multiplier: 1,
+  },
+  gameMode: {
+    current: 'normal',
+    speedModeActive: false,
+    survivalLives: 3,
+    maxSurvivalLives: 3,
+    timeAttackScore: 0,
+    timeAttackTimeLeft: 60,
+    bossProgress: 0,
+  },
+  statistics: {
+    totalQuestionsAnswered: 0,
+    correctAnswers: 0,
+    totalPlayTime: 0,
+    zonesReached: 1,
+    itemsCollected: 0,
+    coinsEarned: 0,
+    gemsEarned: 0,
+    shinyGemsEarned: 0,
+    chestsOpened: 0,
+    accuracyByCategory: {},
+    sessionStartTime: new Date(),
+    totalDeaths: 0,
+    totalVictories: 0,
+    longestStreak: 0,
+    fastestVictory: 0,
+    totalDamageDealt: 0,
+    totalDamageTaken: 0,
+    itemsUpgraded: 0,
+    itemsSold: 0,
+    totalResearchSpent: 0,
+    averageAccuracy: 0,
+    revivals: 0,
+  },
+  cheats: {
+    infiniteCoins: false,
+    infiniteGems: false,
+    obtainAnyItem: false,
+  },
+  mining: {
+    totalGemsMined: 0,
+    totalShinyGemsMined: 0,
+  },
   yojefMarket: {
-    items: generateYojefMarketItems(),
+    items: [],
     lastRefresh: new Date(),
-    nextRefresh: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+    nextRefresh: new Date(Date.now() + 24 * 60 * 60 * 1000),
   },
   playerTags: initializePlayerTags(),
-  dailyRewards: initialDailyRewards,
-  progression: initialProgression,
-  offlineProgress: initialOfflineProgress,
-  gardenOfGrowth: initialGardenOfGrowth,
-  settings: initialSettings,
+  dailyRewards: {
+    lastClaimDate: null,
+    currentStreak: 0,
+    maxStreak: 0,
+    availableReward: null,
+    rewardHistory: [],
+  },
+  progression: {
+    level: 1,
+    experience: 0,
+    experienceToNext: 100,
+    skillPoints: 0,
+    unlockedSkills: [],
+    prestigeLevel: 0,
+    prestigePoints: 0,
+    masteryLevels: {},
+  },
+  offlineProgress: {
+    lastSaveTime: new Date(),
+    offlineCoins: 0,
+    offlineGems: 0,
+    offlineTime: 0,
+    maxOfflineHours: 24,
+  },
+  gardenOfGrowth: {
+    isPlanted: false,
+    plantedAt: null,
+    lastWatered: null,
+    waterHoursRemaining: 0,
+    growthCm: 0,
+    totalGrowthBonus: 0,
+    seedCost: 1000,
+    waterCost: 500,
+    maxGrowthCm: 100,
+  },
+  settings: {
+    colorblindMode: false,
+    darkMode: true,
+    language: 'en',
+    notifications: true,
+  },
   hasUsedRevival: false,
-};
+  skills: {
+    activeMenuSkill: null,
+    lastRollTime: null,
+    playTimeThisSession: 0,
+    sessionStartTime: new Date(),
+  },
+  adventureSkills: {
+    selectedSkill: null,
+    availableSkills: [],
+    showSelectionModal: false,
+    skillEffects: {
+      skipCardUsed: false,
+      metalShieldUsed: false,
+      dodgeUsed: false,
+      truthLiesActive: false,
+      lightningChainActive: false,
+      rampActive: false,
+    },
+  },
+});
 
 export const useGameState = () => {
-  const [gameState, setGameState] = useState<GameState>(initialGameState);
+  const [gameState, setGameState] = useState<GameState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Update play time
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGameState(prev => ({
-        ...prev,
-        statistics: {
-          ...prev.statistics,
-          totalPlayTime: prev.statistics.totalPlayTime + 1,
-        },
-      }));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // AFK gem mining - 2 gems per minute
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGameState(prev => ({
-        ...prev,
-        gems: prev.gems + 2,
-        statistics: {
-          ...prev.statistics,
-          gemsEarned: prev.statistics.gemsEarned + 2,
-        },
-      }));
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Garden growth system
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGameState(prev => {
-        if (!prev.gardenOfGrowth.isPlanted || prev.gardenOfGrowth.waterHoursRemaining <= 0) {
-          return prev;
-        }
-
-        const now = new Date();
-        const lastUpdate = new Date(prev.gardenOfGrowth.lastWatered || prev.gardenOfGrowth.plantedAt || now);
-        const hoursSinceLastUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
-        
-        if (hoursSinceLastUpdate >= 1) {
-          const newWaterHours = Math.max(0, prev.gardenOfGrowth.waterHoursRemaining - hoursSinceLastUpdate);
-          const growthRate = 0.5; // 0.5cm per hour
-          const newGrowth = Math.min(
-            prev.gardenOfGrowth.growthCm + (hoursSinceLastUpdate * growthRate),
-            prev.gardenOfGrowth.maxGrowthCm
-          );
-          const newBonus = newGrowth * 5; // 5% per cm
-
-          return {
-            ...prev,
-            gardenOfGrowth: {
-              ...prev.gardenOfGrowth,
-              waterHoursRemaining: newWaterHours,
-              growthCm: newGrowth,
-              totalGrowthBonus: newBonus,
-              lastWatered: now,
-            },
-          };
-        }
-
-        return prev;
-      });
-    }, 60000); // Check every minute
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Yojef Market refresh timer
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGameState(prev => {
-        const now = new Date();
-        const nextRefresh = new Date(prev.yojefMarket.nextRefresh);
-        
-        if (now >= nextRefresh) {
-          return {
-            ...prev,
-            yojefMarket: {
-              items: generateYojefMarketItems(),
-              lastRefresh: now,
-              nextRefresh: new Date(now.getTime() + 5 * 60 * 1000),
-            },
-          };
-        }
-        return prev;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Daily rewards check
-  useEffect(() => {
-    const checkDailyRewards = () => {
-      setGameState(prev => {
-        const now = new Date();
-        const lastClaim = prev.dailyRewards.lastClaimDate ? new Date(prev.dailyRewards.lastClaimDate) : null;
-        
-        if (!lastClaim || now.getDate() !== lastClaim.getDate() || now.getMonth() !== lastClaim.getMonth() || now.getFullYear() !== lastClaim.getFullYear()) {
-          // Check if it's been more than 24 hours since last claim
-          const hoursSinceLastClaim = lastClaim ? (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60) : 25;
-          
-          if (hoursSinceLastClaim >= 24) {
-            const newDay = prev.dailyRewards.currentStreak + 1;
-            const baseCoins = 50 + (newDay * 25);
-            const baseGems = 5 + Math.floor(newDay / 2);
-            
-            const newReward: DailyReward = {
-              day: newDay,
-              coins: baseCoins,
-              gems: baseGems,
-              special: newDay === 7 ? 'Legendary Chest' : newDay === 14 ? 'Mythical Item' : undefined,
-              claimed: false
-            };
-            
-            return {
-              ...prev,
-              dailyRewards: {
-                ...prev.dailyRewards,
-                availableReward: newReward,
-              },
-            };
-          }
-        }
-        
-        return prev;
-      });
-    };
-
-    checkDailyRewards();
-    const interval = setInterval(checkDailyRewards, 60000); // Check every minute
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Offline progress calculation
-  useEffect(() => {
-    const calculateOfflineProgress = () => {
-      setGameState(prev => {
-        const now = new Date();
-        const lastSave = new Date(prev.offlineProgress.lastSaveTime);
-        const offlineTimeSeconds = Math.floor((now.getTime() - lastSave.getTime()) / 1000);
-        const maxOfflineSeconds = prev.offlineProgress.maxOfflineHours * 3600;
-        const actualOfflineTime = Math.min(offlineTimeSeconds, maxOfflineSeconds);
-        
-        if (actualOfflineTime >= 300) { // 5 minutes minimum
-          const offlineHours = actualOfflineTime / 3600;
-          const researchBonus = 1 + (calculateResearchBonus(prev.research.atk.level) + calculateResearchBonus(prev.research.def.level) + calculateResearchBonus(prev.research.hp.level)) / 300;
-          
-          const offlineCoins = Math.floor(offlineHours * 50 * researchBonus);
-          const offlineGems = Math.floor(offlineHours * 5 * researchBonus);
-          
-          return {
-            ...prev,
-            offlineProgress: {
-              ...prev.offlineProgress,
-              lastSaveTime: now,
-              offlineCoins,
-              offlineGems,
-              offlineTime: actualOfflineTime,
-            },
-          };
-        }
-        
-        return {
-          ...prev,
-          offlineProgress: {
-            ...prev.offlineProgress,
-            lastSaveTime: now,
-          },
-        };
-      });
-    };
-
-    calculateOfflineProgress();
-  }, []);
 
   // Load game state from storage
   useEffect(() => {
     const loadGameState = async () => {
-      setIsLoading(true);
-      
       try {
         const savedState = await AsyncStorage.getItem(STORAGE_KEY);
-        
         if (savedState) {
           const parsedState = JSON.parse(savedState);
-          
-          // Ensure research object is properly initialized
-          const research = {
-            atk: {
-              level: parsedState.research?.atk?.level || 0,
-              totalSpent: parsedState.research?.atk?.totalSpent || 0,
-            },
-            def: {
-              level: parsedState.research?.def?.level || 0,
-              totalSpent: parsedState.research?.def?.totalSpent || 0,
-            },
-            hp: {
-              level: parsedState.research?.hp?.level || 0,
-              totalSpent: parsedState.research?.hp?.totalSpent || 0,
-            },
-          };
-          
-          // Ensure yojefMarket dates are properly converted
-          const yojefMarket = parsedState.yojefMarket ? {
-            items: parsedState.yojefMarket.items || generateYojefMarketItems(),
-            lastRefresh: new Date(parsedState.yojefMarket.lastRefresh || Date.now()),
-            nextRefresh: new Date(parsedState.yojefMarket.nextRefresh || Date.now() + 5 * 60 * 1000),
-          } : {
-            items: generateYojefMarketItems(),
-            lastRefresh: new Date(),
-            nextRefresh: new Date(Date.now() + 5 * 60 * 1000),
-          };
-          
-          setGameState({
-            ...initialGameState,
+          // Ensure all new properties exist
+          const completeState = {
+            ...createInitialGameState(),
             ...parsedState,
-            currentEnemy: null,
-            inCombat: false,
-            combatLog: [],
-            achievements: parsedState.achievements || initializeAchievements(),
-            collectionBook: parsedState.collectionBook || initialCollectionBook,
-            knowledgeStreak: parsedState.knowledgeStreak || initialKnowledgeStreak,
-            gameMode: parsedState.gameMode || initialGameMode,
-            statistics: {
-              ...initialStatistics,
-              ...parsedState.statistics,
-              sessionStartTime: new Date(),
+            skills: {
+              ...createInitialGameState().skills,
+              ...parsedState.skills,
             },
-            research: research,
-            isPremium: parsedState.isPremium || parsedState.zone >= 50,
-            cheats: parsedState.cheats || initialCheats,
-            mining: parsedState.mining || initialMining,
-            yojefMarket: yojefMarket,
-            playerTags: parsedState.playerTags || initializePlayerTags(),
-            shinyGems: parsedState.shinyGems || 0,
-            inventory: {
-              ...initialInventory,
-              ...parsedState.inventory,
-              weapons: parsedState.inventory?.weapons || [],
-              armor: parsedState.inventory?.armor || [],
-              relics: parsedState.inventory?.relics || [],
-              equippedRelics: parsedState.inventory?.equippedRelics || [],
+            adventureSkills: {
+              ...createInitialGameState().adventureSkills,
+              ...parsedState.adventureSkills,
             },
-            dailyRewards: parsedState.dailyRewards || initialDailyRewards,
-            progression: parsedState.progression || initialProgression,
-            offlineProgress: {
-              ...initialOfflineProgress,
-              ...parsedState.offlineProgress,
-              lastSaveTime: new Date(parsedState.offlineProgress?.lastSaveTime || Date.now()),
-            },
-            gardenOfGrowth: {
-              ...initialGardenOfGrowth,
-              ...parsedState.gardenOfGrowth,
-              plantedAt: parsedState.gardenOfGrowth?.plantedAt ? new Date(parsedState.gardenOfGrowth.plantedAt) : null,
-              lastWatered: parsedState.gardenOfGrowth?.lastWatered ? new Date(parsedState.gardenOfGrowth.lastWatered) : null,
-            },
-            settings: {
-              ...initialSettings,
-              ...parsedState.settings,
-            },
-            hasUsedRevival: parsedState.hasUsedRevival || false,
-          });
+          };
+          setGameState(completeState);
         } else {
-          setGameState({
-            ...initialGameState,
-            achievements: initializeAchievements(),
-            statistics: {
-              ...initialStatistics,
-              sessionStartTime: new Date(),
-            },
-            playerTags: initializePlayerTags(),
-          });
+          setGameState(createInitialGameState());
         }
       } catch (error) {
         console.error('Error loading game state:', error);
-        setGameState({
-          ...initialGameState,
-          achievements: initializeAchievements(),
-          statistics: {
-            ...initialStatistics,
-            sessionStartTime: new Date(),
-          },
-          playerTags: initializePlayerTags(),
-        });
+        setGameState(createInitialGameState());
       } finally {
         setIsLoading(false);
       }
@@ -497,595 +207,686 @@ export const useGameState = () => {
     loadGameState();
   }, []);
 
-  // Save game state to storage whenever it changes
-  useEffect(() => {
-    if (!isLoading) {
-      const saveGameState = async () => {
-        try {
-          const stateToSave = {
-            ...gameState,
-            currentEnemy: null,
-            inCombat: false,
-            combatLog: [],
-          };
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
-        } catch (error) {
-          console.error('Error saving game state:', error);
-        }
-      };
-
-      saveGameState();
+  // Save game state to storage
+  const saveGameState = useCallback(async (state: GameState) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+      console.error('Error saving game state:', error);
     }
-  }, [gameState, isLoading]);
+  }, []);
 
-  const updateCollectionBook = useCallback((item: Weapon | Armor) => {
-    setGameState(prev => {
-      const isWeapon = 'baseAtk' in item;
-      const collectionKey = isWeapon ? 'weapons' : 'armor';
-      const countKey = isWeapon ? 'totalWeaponsFound' : 'totalArmorFound';
-      
-      if (prev.collectionBook[collectionKey][item.name]) {
-        return prev;
-      }
+  // Auto-save when game state changes
+  useEffect(() => {
+    if (gameState && !isLoading) {
+      saveGameState(gameState);
+    }
+  }, [gameState, isLoading, saveGameState]);
 
-      return {
-        ...prev,
-        collectionBook: {
-          ...prev.collectionBook,
-          [collectionKey]: {
-            ...prev.collectionBook[collectionKey],
-            [item.name]: true,
-          },
-          [countKey]: prev.collectionBook[countKey] + 1,
-          rarityStats: {
-            ...prev.collectionBook.rarityStats,
-            [item.rarity]: prev.collectionBook.rarityStats[item.rarity] + 1,
-          },
-        },
-        statistics: {
-          ...prev.statistics,
-          itemsCollected: prev.statistics.itemsCollected + 1,
-        },
-      };
+  const updateGameState = useCallback((updater: (state: GameState) => GameState) => {
+    setGameState(prevState => {
+      if (!prevState) return prevState;
+      return updater(prevState);
     });
   }, []);
 
-  const updateKnowledgeStreak = useCallback((correct: boolean) => {
-    setGameState(prev => {
-      const newCurrent = correct ? prev.knowledgeStreak.current + 1 : 0;
-      const newBest = Math.max(prev.knowledgeStreak.best, newCurrent);
-      const newMultiplier = Math.min(1 + Math.floor(newCurrent / 5) * 0.1, 2);
-
-      return {
-        ...prev,
-        knowledgeStreak: {
-          current: newCurrent,
-          best: newBest,
-          multiplier: newMultiplier,
-          lastCorrectTime: correct ? new Date() : prev.knowledgeStreak.lastCorrectTime,
-        },
-        statistics: {
-          ...prev.statistics,
-          longestStreak: Math.max(prev.statistics.longestStreak, newCurrent),
-        },
-      };
-    });
-  }, []);
-
-  const updateStatistics = useCallback((category: string, correct: boolean) => {
-    setGameState(prev => ({
-      ...prev,
-      statistics: {
-        ...prev.statistics,
-        totalQuestionsAnswered: prev.statistics.totalQuestionsAnswered + 1,
-        correctAnswers: prev.statistics.correctAnswers + (correct ? 1 : 0),
-        accuracyByCategory: {
-          ...prev.statistics.accuracyByCategory,
-          [category]: {
-            correct: (prev.statistics.accuracyByCategory[category]?.correct || 0) + (correct ? 1 : 0),
-            total: (prev.statistics.accuracyByCategory[category]?.total || 0) + 1,
-          },
-        },
-        averageAccuracy: prev.statistics.totalQuestionsAnswered > 0 
-          ? (prev.statistics.correctAnswers + (correct ? 1 : 0)) / (prev.statistics.totalQuestionsAnswered + 1) * 100
-          : 0,
+  const equipWeapon = useCallback((weapon: Weapon) => {
+    updateGameState(state => ({
+      ...state,
+      inventory: {
+        ...state.inventory,
+        currentWeapon: weapon,
       },
     }));
-  }, []);
+  }, [updateGameState]);
 
-  const updateProgression = useCallback((experienceGained: number) => {
-    setGameState(prev => {
-      let newExperience = prev.progression.experience + experienceGained;
-      let newLevel = prev.progression.level;
-      let newSkillPoints = prev.progression.skillPoints;
-      let experienceToNext = prev.progression.experienceToNext;
+  const equipArmor = useCallback((armor: Armor) => {
+    updateGameState(state => ({
+      ...state,
+      inventory: {
+        ...state.inventory,
+        currentArmor: armor,
+      },
+    }));
+  }, [updateGameState]);
 
-      while (newExperience >= experienceToNext) {
-        newExperience -= experienceToNext;
-        newLevel++;
-        newSkillPoints++;
-        experienceToNext = Math.floor(100 * Math.pow(1.1, newLevel - 1));
-      }
+  const upgradeWeapon = useCallback((weaponId: string) => {
+    updateGameState(state => {
+      const weapon = state.inventory.weapons.find(w => w.id === weaponId);
+      if (!weapon || state.gems < weapon.upgradeCost) return state;
+
+      const updatedWeapons = state.inventory.weapons.map(w =>
+        w.id === weaponId
+          ? {
+              ...w,
+              level: w.level + 1,
+              upgradeCost: Math.floor(w.upgradeCost * 1.5),
+            }
+          : w
+      );
+
+      const updatedCurrentWeapon = state.inventory.currentWeapon?.id === weaponId
+        ? updatedWeapons.find(w => w.id === weaponId) || state.inventory.currentWeapon
+        : state.inventory.currentWeapon;
 
       return {
-        ...prev,
-        progression: {
-          ...prev.progression,
-          level: newLevel,
-          experience: newExperience,
-          experienceToNext,
-          skillPoints: newSkillPoints,
+        ...state,
+        gems: state.gems - weapon.upgradeCost,
+        inventory: {
+          ...state.inventory,
+          weapons: updatedWeapons,
+          currentWeapon: updatedCurrentWeapon,
+        },
+        statistics: {
+          ...state.statistics,
+          itemsUpgraded: state.statistics.itemsUpgraded + 1,
         },
       };
     });
-  }, []);
+  }, [updateGameState]);
 
-  const checkAndUnlockAchievements = useCallback(() => {
-    setGameState(prev => {
-      const newUnlocks = checkAchievements(prev);
-      
-      if (newUnlocks.length > 0) {
-        let bonusCoins = 0;
-        let bonusGems = 0;
-        
-        newUnlocks.forEach(achievement => {
-          if (achievement.reward) {
-            bonusCoins += achievement.reward.coins || 0;
-            bonusGems += achievement.reward.gems || 0;
-          }
-        });
+  const upgradeArmor = useCallback((armorId: string) => {
+    updateGameState(state => {
+      const armor = state.inventory.armor.find(a => a.id === armorId);
+      if (!armor || state.gems < armor.upgradeCost) return state;
 
-        const updatedAchievements = prev.achievements.map(existing => {
-          const newUnlock = newUnlocks.find(nu => nu.id === existing.id);
-          return newUnlock || existing;
-        });
+      const updatedArmor = state.inventory.armor.map(a =>
+        a.id === armorId
+          ? {
+              ...a,
+              level: a.level + 1,
+              upgradeCost: Math.floor(a.upgradeCost * 1.5),
+            }
+          : a
+      );
 
-        return {
-          ...prev,
-          coins: prev.coins + bonusCoins,
-          gems: prev.gems + bonusGems,
-          achievements: updatedAchievements,
-        };
-      }
+      const updatedCurrentArmor = state.inventory.currentArmor?.id === armorId
+        ? updatedArmor.find(a => a.id === armorId) || state.inventory.currentArmor
+        : state.inventory.currentArmor;
 
-      return prev;
+      return {
+        ...state,
+        gems: state.gems - armor.upgradeCost,
+        inventory: {
+          ...state.inventory,
+          armor: updatedArmor,
+          currentArmor: updatedCurrentArmor,
+        },
+        statistics: {
+          ...state.statistics,
+          itemsUpgraded: state.statistics.itemsUpgraded + 1,
+        },
+      };
     });
-  }, []);
+  }, [updateGameState]);
 
-  const checkAndUnlockPlayerTags = useCallback(() => {
-    setGameState(prev => {
-      const newUnlocks = checkPlayerTags(prev);
-      
-      if (newUnlocks.length > 0) {
-        const updatedTags = prev.playerTags.map(existing => {
-          const newUnlock = newUnlocks.find(nu => nu.id === existing.id);
-          return newUnlock || existing;
-        });
+  const sellWeapon = useCallback((weaponId: string) => {
+    updateGameState(state => {
+      const weapon = state.inventory.weapons.find(w => w.id === weaponId);
+      if (!weapon || state.inventory.currentWeapon?.id === weaponId) return state;
 
-        return {
-          ...prev,
-          playerTags: updatedTags,
-        };
-      }
-
-      return prev;
+      return {
+        ...state,
+        coins: state.coins + weapon.sellPrice,
+        inventory: {
+          ...state.inventory,
+          weapons: state.inventory.weapons.filter(w => w.id !== weaponId),
+        },
+        statistics: {
+          ...state.statistics,
+          itemsSold: state.statistics.itemsSold + 1,
+        },
+      };
     });
-  }, []);
+  }, [updateGameState]);
 
-  const updatePlayerStats = useCallback(() => {
-    setGameState(prev => {
-      const weaponAtk = prev.inventory.currentWeapon 
-        ? prev.inventory.currentWeapon.baseAtk + (prev.inventory.currentWeapon.level - 1) * 10
-        : 0;
-      const armorDef = prev.inventory.currentArmor 
-        ? prev.inventory.currentArmor.baseDef + (prev.inventory.currentArmor.level - 1) * 5
-        : 0;
+  const sellArmor = useCallback((armorId: string) => {
+    updateGameState(state => {
+      const armor = state.inventory.armor.find(a => a.id === armorId);
+      if (!armor || state.inventory.currentArmor?.id === armorId) return state;
 
-      // Add relic bonuses
-      let relicAtkBonus = 0;
-      let relicDefBonus = 0;
-      
-      prev.inventory.equippedRelics.forEach(relic => {
-        if (relic.type === 'weapon' && relic.baseAtk) {
-          relicAtkBonus += relic.baseAtk + (relic.level - 1) * 22;
-        } else if (relic.type === 'armor' && relic.baseDef) {
-          relicDefBonus += relic.baseDef + (relic.level - 1) * 15;
+      return {
+        ...state,
+        coins: state.coins + armor.sellPrice,
+        inventory: {
+          ...state.inventory,
+          armor: state.inventory.armor.filter(a => a.id !== armorId),
+        },
+        statistics: {
+          ...state.statistics,
+          itemsSold: state.statistics.itemsSold + 1,
+        },
+      };
+    });
+  }, [updateGameState]);
+
+  const upgradeResearch = useCallback((type: 'atk' | 'def' | 'hp') => {
+    updateGameState(state => {
+      const cost = calculateResearchCost(state.research.level);
+      if (state.coins < cost) return state;
+
+      return {
+        ...state,
+        coins: state.coins - cost,
+        research: {
+          ...state.research,
+          level: state.research.level + 1,
+          totalSpent: state.research.totalSpent + cost,
+        },
+        statistics: {
+          ...state.statistics,
+          totalResearchSpent: state.statistics.totalResearchSpent + cost,
+        },
+      };
+    });
+  }, [updateGameState]);
+
+  const openChest = useCallback((cost: number): ChestReward | null => {
+    let reward: ChestReward | null = null;
+
+    updateGameState(state => {
+      if (state.coins < cost) return state;
+
+      const weights = getChestRarityWeights(cost);
+      const random = Math.random() * 100;
+      let cumulative = 0;
+      let selectedRarity = 'common';
+
+      const rarities = ['common', 'rare', 'epic', 'legendary', 'mythical'];
+      for (let i = 0; i < weights.length; i++) {
+        cumulative += weights[i];
+        if (random <= cumulative) {
+          selectedRarity = rarities[i];
+          break;
         }
-      });
-
-      const atkResearchBonus = calculateResearchBonus(prev.research.atk.level);
-      const defResearchBonus = calculateResearchBonus(prev.research.def.level);
-      const hpResearchBonus = calculateResearchBonus(prev.research.hp.level);
-
-      // Add garden bonuses
-      const gardenBonus = prev.gardenOfGrowth.totalGrowthBonus;
-
-      let atkMultiplier = 1 + (atkResearchBonus + gardenBonus) / 100;
-      let defMultiplier = 1 + (defResearchBonus + gardenBonus) / 100;
-      let hpMultiplier = 1 + (hpResearchBonus + gardenBonus) / 100;
-
-      // Apply game mode modifiers
-      switch (prev.gameMode.current) {
-        case 'bloodlust':
-          atkMultiplier *= 2;
-          defMultiplier *= 0.5;
-          hpMultiplier *= 0.5;
-          break;
-        case 'crazy':
-          atkMultiplier *= 0.5;
-          defMultiplier *= 0.5;
-          hpMultiplier *= 0.5;
-          break;
       }
 
-      const finalAtk = Math.floor(((prev.playerStats.baseAtk + weaponAtk + relicAtkBonus) * atkMultiplier));
-      const finalDef = Math.floor(((prev.playerStats.baseDef + armorDef + relicDefBonus) * defMultiplier));
-      const finalMaxHp = Math.floor(prev.playerStats.baseHp * hpMultiplier);
+      // 70% chance for weapon, 30% for armor
+      const isWeapon = Math.random() < 0.7;
+      const item = isWeapon ? generateWeapon(false, selectedRarity) : generateArmor(false, selectedRarity);
+
+      reward = {
+        type: isWeapon ? 'weapon' : 'armor',
+        items: [item],
+      };
+
+      const newInventory = { ...state.inventory };
+      if (isWeapon) {
+        newInventory.weapons = [...newInventory.weapons, item as Weapon];
+      } else {
+        newInventory.armor = [...newInventory.armor, item as Armor];
+      }
+
+      // Update collection book
+      const newCollectionBook = { ...state.collectionBook };
+      if (isWeapon) {
+        if (!newCollectionBook.weapons[item.name]) {
+          newCollectionBook.weapons[item.name] = true;
+          newCollectionBook.totalWeaponsFound += 1;
+        }
+      } else {
+        if (!newCollectionBook.armor[item.name]) {
+          newCollectionBook.armor[item.name] = true;
+          newCollectionBook.totalArmorFound += 1;
+        }
+      }
+
+      newCollectionBook.rarityStats[item.rarity as keyof typeof newCollectionBook.rarityStats] += 1;
 
       return {
-        ...prev,
-        playerStats: {
-          ...prev.playerStats,
-          atk: finalAtk,
-          def: finalDef,
-          maxHp: finalMaxHp,
-          hp: Math.min(prev.playerStats.hp, finalMaxHp),
+        ...state,
+        coins: state.coins - cost,
+        gems: state.gems + Math.floor(Math.random() * 10) + 5,
+        inventory: newInventory,
+        collectionBook: newCollectionBook,
+        statistics: {
+          ...state.statistics,
+          chestsOpened: state.statistics.chestsOpened + 1,
+          itemsCollected: state.statistics.itemsCollected + 1,
         },
       };
     });
+
+    return reward;
+  }, [updateGameState]);
+
+  const purchaseMythical = useCallback((cost: number): boolean => {
+    let success = false;
+
+    updateGameState(state => {
+      if (state.coins < cost) return state;
+
+      success = true;
+      const isWeapon = Math.random() < 0.5;
+      const item = isWeapon ? generateWeapon(false, 'mythical') : generateArmor(false, 'mythical');
+
+      const newInventory = { ...state.inventory };
+      if (isWeapon) {
+        newInventory.weapons = [...newInventory.weapons, item as Weapon];
+      } else {
+        newInventory.armor = [...newInventory.armor, item as Armor];
+      }
+
+      return {
+        ...state,
+        coins: state.coins - cost,
+        inventory: newInventory,
+      };
+    });
+
+    return success;
+  }, [updateGameState]);
+
+  const startCombat = useCallback(() => {
+    updateGameState(state => {
+      // Show adventure skill selection modal
+      const availableSkills = generateRandomAdventureSkills();
+      
+      return {
+        ...state,
+        adventureSkills: {
+          ...state.adventureSkills,
+          availableSkills,
+          showSelectionModal: true,
+        },
+      };
+    });
+  }, [updateGameState]);
+
+  const selectAdventureSkill = useCallback((skill: AdventureSkill) => {
+    updateGameState(state => {
+      const enemy = generateEnemy(state.zone);
+      
+      // Apply skill effects
+      let modifiedPlayerStats = { ...state.playerStats };
+      let skillEffects = { ...state.adventureSkills.skillEffects };
+
+      switch (skill.type) {
+        case 'risker':
+          modifiedPlayerStats.hp = Math.floor(modifiedPlayerStats.hp * 0.85);
+          modifiedPlayerStats.atk = Math.floor(modifiedPlayerStats.atk * 1.2);
+          break;
+        case 'lightning_chain':
+          skillEffects.lightningChainActive = true;
+          break;
+        case 'truth_lies':
+          skillEffects.truthLiesActive = true;
+          break;
+        case 'ramp':
+          const statToDouble = Math.random() < 0.33 ? 'atk' : Math.random() < 0.5 ? 'def' : 'hp';
+          const statToReduce = statToDouble === 'atk' ? (Math.random() < 0.5 ? 'def' : 'hp') : 
+                              statToDouble === 'def' ? (Math.random() < 0.5 ? 'atk' : 'hp') : 
+                              (Math.random() < 0.5 ? 'atk' : 'def');
+          
+          if (statToDouble === 'atk') modifiedPlayerStats.atk *= 2;
+          else if (statToDouble === 'def') modifiedPlayerStats.def *= 2;
+          else modifiedPlayerStats.hp *= 2;
+
+          if (statToReduce === 'atk') modifiedPlayerStats.atk = Math.floor(modifiedPlayerStats.atk * 0.6);
+          else if (statToReduce === 'def') modifiedPlayerStats.def = Math.floor(modifiedPlayerStats.def * 0.6);
+          else modifiedPlayerStats.hp = Math.floor(modifiedPlayerStats.hp * 0.6);
+          
+          skillEffects.rampActive = true;
+          break;
+      }
+
+      return {
+        ...state,
+        currentEnemy: enemy,
+        inCombat: true,
+        playerStats: modifiedPlayerStats,
+        combatLog: [`You encounter a ${enemy.name}!`],
+        adventureSkills: {
+          ...state.adventureSkills,
+          selectedSkill: skill,
+          showSelectionModal: false,
+          skillEffects: {
+            ...skillEffects,
+            skipCardUsed: false,
+            metalShieldUsed: false,
+            dodgeUsed: false,
+          },
+        },
+      };
+    });
+  }, [updateGameState]);
+
+  const skipAdventureSkills = useCallback(() => {
+    updateGameState(state => {
+      const enemy = generateEnemy(state.zone);
+      
+      return {
+        ...state,
+        currentEnemy: enemy,
+        inCombat: true,
+        combatLog: [`You encounter a ${enemy.name}!`],
+        adventureSkills: {
+          ...state.adventureSkills,
+          selectedSkill: null,
+          showSelectionModal: false,
+          skillEffects: {
+            skipCardUsed: false,
+            metalShieldUsed: false,
+            dodgeUsed: false,
+            truthLiesActive: false,
+            lightningChainActive: false,
+            rampActive: false,
+          },
+        },
+      };
+    });
+  }, [updateGameState]);
+
+  const useSkipCard = useCallback(() => {
+    updateGameState(state => ({
+      ...state,
+      adventureSkills: {
+        ...state.adventureSkills,
+        skillEffects: {
+          ...state.adventureSkills.skillEffects,
+          skipCardUsed: true,
+        },
+      },
+    }));
+  }, [updateGameState]);
+
+  const attack = useCallback((hit: boolean, category?: string) => {
+    updateGameState(state => {
+      if (!state.currentEnemy) return state;
+
+      let newState = { ...state };
+      let damage = 0;
+      let enemyDamage = 0;
+
+      if (hit) {
+        // Player attacks
+        damage = Math.max(1, newState.playerStats.atk - newState.currentEnemy.def);
+        
+        // Apply lightning chain bonus
+        if (newState.adventureSkills.skillEffects.lightningChainActive) {
+          damage = Math.floor(damage * 1.15);
+        }
+
+        newState.currentEnemy.hp = Math.max(0, newState.currentEnemy.hp - damage);
+        newState.combatLog = [...newState.combatLog, `You deal ${damage} damage!`];
+
+        // Update knowledge streak
+        newState.knowledgeStreak.current += 1;
+        if (newState.knowledgeStreak.current > newState.knowledgeStreak.best) {
+          newState.knowledgeStreak.best = newState.knowledgeStreak.current;
+        }
+        newState.knowledgeStreak.multiplier = 1 + (newState.knowledgeStreak.current * 0.1);
+
+        // Update statistics
+        newState.statistics.correctAnswers += 1;
+        newState.statistics.totalDamageDealt += damage;
+
+        if (category) {
+          if (!newState.statistics.accuracyByCategory[category]) {
+            newState.statistics.accuracyByCategory[category] = { correct: 0, total: 0 };
+          }
+          newState.statistics.accuracyByCategory[category].correct += 1;
+          newState.statistics.accuracyByCategory[category].total += 1;
+        }
+      } else {
+        // Enemy attacks
+        enemyDamage = Math.max(1, newState.currentEnemy.atk - newState.playerStats.def);
+        
+        // Apply dodge skill
+        if (newState.adventureSkills.skillEffects.dodgeUsed === false && newState.adventureSkills.selectedSkill?.type === 'dodge') {
+          newState.adventureSkills.skillEffects.dodgeUsed = true;
+          newState.combatLog = [...newState.combatLog, `You dodge the attack!`];
+        } else {
+          // Apply lightning chain penalty
+          if (newState.adventureSkills.skillEffects.lightningChainActive) {
+            enemyDamage = Math.floor(enemyDamage * 1.1);
+          }
+
+          newState.playerStats.hp = Math.max(0, newState.playerStats.hp - enemyDamage);
+          newState.combatLog = [...newState.combatLog, `Enemy deals ${enemyDamage} damage!`];
+          newState.statistics.totalDamageTaken += enemyDamage;
+        }
+
+        // Reset knowledge streak
+        newState.knowledgeStreak.current = 0;
+        newState.knowledgeStreak.multiplier = 1;
+
+        if (category) {
+          if (!newState.statistics.accuracyByCategory[category]) {
+            newState.statistics.accuracyByCategory[category] = { correct: 0, total: 0 };
+          }
+          newState.statistics.accuracyByCategory[category].total += 1;
+        }
+      }
+
+      newState.statistics.totalQuestionsAnswered += 1;
+
+      // Check if enemy is defeated
+      if (newState.currentEnemy.hp <= 0) {
+        const coinReward = Math.floor((10 + newState.zone * 2) * newState.knowledgeStreak.multiplier);
+        const gemReward = Math.floor((1 + Math.floor(newState.zone / 5)) * newState.knowledgeStreak.multiplier);
+
+        newState.coins += coinReward;
+        newState.gems += gemReward;
+        newState.zone += 1;
+        newState.inCombat = false;
+        newState.currentEnemy = null;
+        newState.combatLog = [...newState.combatLog, `Victory! +${coinReward} coins, +${gemReward} gems`];
+
+        // Reset adventure skills
+        newState.adventureSkills = {
+          selectedSkill: null,
+          availableSkills: [],
+          showSelectionModal: false,
+          skillEffects: {
+            skipCardUsed: false,
+            metalShieldUsed: false,
+            dodgeUsed: false,
+            truthLiesActive: false,
+            lightningChainActive: false,
+            rampActive: false,
+          },
+        };
+
+        // Check for premium unlock
+        if (newState.zone >= 50) {
+          newState.isPremium = true;
+        }
+
+        newState.statistics.totalVictories += 1;
+        newState.statistics.coinsEarned += coinReward;
+        newState.statistics.gemsEarned += gemReward;
+        newState.statistics.zonesReached = Math.max(newState.statistics.zonesReached, newState.zone);
+      }
+
+      // Check if player is defeated
+      if (newState.playerStats.hp <= 0) {
+        // Metal shield auto-activation
+        if (newState.adventureSkills.selectedSkill?.type === 'metal_shield' && !newState.adventureSkills.skillEffects.metalShieldUsed) {
+          newState.playerStats.hp = 1;
+          newState.playerStats.atk = Math.floor(newState.playerStats.atk * 0.7);
+          newState.adventureSkills.skillEffects.metalShieldUsed = true;
+          newState.combatLog = [...newState.combatLog, `Metal Shield activated! Sacrificed ATK to survive!`];
+        } else if (!newState.hasUsedRevival) {
+          // Free revival
+          newState.playerStats.hp = newState.playerStats.maxHp;
+          newState.hasUsedRevival = true;
+          newState.combatLog = [...newState.combatLog, `You have been revived!`];
+          newState.statistics.revivals += 1;
+        } else {
+          // Game over
+          newState.inCombat = false;
+          newState.currentEnemy = null;
+          newState.combatLog = [...newState.combatLog, `You have been defeated!`];
+          newState.statistics.totalDeaths += 1;
+          
+          // Reset adventure skills
+          newState.adventureSkills = {
+            selectedSkill: null,
+            availableSkills: [],
+            showSelectionModal: false,
+            skillEffects: {
+              skipCardUsed: false,
+              metalShieldUsed: false,
+              dodgeUsed: false,
+              truthLiesActive: false,
+              lightningChainActive: false,
+              rampActive: false,
+            },
+          };
+        }
+      }
+
+      return newState;
+    });
+  }, [updateGameState]);
+
+  const resetGame = useCallback(() => {
+    setGameState(createInitialGameState());
   }, []);
 
   const setGameMode = useCallback((mode: 'normal' | 'blitz' | 'bloodlust' | 'crazy' | 'survival' | 'timeAttack' | 'boss') => {
-    setGameState(prev => ({
-      ...prev,
+    updateGameState(state => ({
+      ...state,
       gameMode: {
-        ...prev.gameMode,
+        ...state.gameMode,
         current: mode,
-        speedModeActive: mode === 'blitz' || mode === 'bloodlust',
-        survivalLives: mode === 'survival' ? 3 : prev.gameMode.survivalLives,
-        timeAttackTimeLeft: mode === 'timeAttack' ? 60 : prev.gameMode.timeAttackTimeLeft,
       },
     }));
-    updatePlayerStats();
-  }, [updatePlayerStats]);
+  }, [updateGameState]);
 
-  const toggleCheat = useCallback((cheat: keyof CheatSettings) => {
-    setGameState(prev => ({
-      ...prev,
+  const toggleCheat = useCallback((cheat: keyof typeof gameState.cheats) => {
+    updateGameState(state => ({
+      ...state,
       cheats: {
-        ...prev.cheats,
-        [cheat]: !prev.cheats[cheat],
+        ...state.cheats,
+        [cheat]: !state.cheats[cheat],
       },
     }));
-  }, []);
+  }, [updateGameState]);
 
   const generateCheatItem = useCallback(() => {
-    console.log('Generate cheat item functionality not implemented yet');
+    // Implementation for cheat item generation
   }, []);
 
   const mineGem = useCallback((x: number, y: number): { gems: number; shinyGems: number } | null => {
-    const isShiny = Math.random() < 0.1;
-    const gemsEarned = isShiny ? 10 : gameState.mining.efficiency;
-    const shinyGemsEarned = isShiny ? 1 : 0;
+    let result: { gems: number; shinyGems: number } | null = null;
 
-    setGameState(prev => ({
-      ...prev,
-      gems: prev.gems + gemsEarned,
-      shinyGems: prev.shinyGems + shinyGemsEarned,
-      mining: {
-        ...prev.mining,
-        totalGemsMined: prev.mining.totalGemsMined + gemsEarned,
-        totalShinyGemsMined: prev.mining.totalShinyGemsMined + shinyGemsEarned,
-      },
-      statistics: {
-        ...prev.statistics,
-        gemsEarned: prev.statistics.gemsEarned + gemsEarned,
-        shinyGemsEarned: prev.statistics.shinyGemsEarned + shinyGemsEarned,
-      },
-    }));
+    updateGameState(state => {
+      // Fixed mining logic - check if there's actually a gem node at this position
+      const isShinyNode = Math.random() < 0.05; // 5% chance for shiny nodes
+      
+      if (isShinyNode) {
+        // Shiny node gives 1 shiny gem
+        result = { gems: 0, shinyGems: 1 };
+        return {
+          ...state,
+          shinyGems: state.shinyGems + 1,
+          mining: {
+            ...state.mining,
+            totalShinyGemsMined: state.mining.totalShinyGemsMined + 1,
+          },
+          statistics: {
+            ...state.statistics,
+            shinyGemsEarned: state.statistics.shinyGemsEarned + 1,
+          },
+        };
+      } else {
+        // Normal node gives 1 regular gem
+        result = { gems: 1, shinyGems: 0 };
+        return {
+          ...state,
+          gems: state.gems + 1,
+          mining: {
+            ...state.mining,
+            totalGemsMined: state.mining.totalGemsMined + 1,
+          },
+          statistics: {
+            ...state.statistics,
+            gemsEarned: state.statistics.gemsEarned + 1,
+          },
+        };
+      }
+    });
 
-    return { gems: gemsEarned, shinyGems: shinyGemsEarned };
-  }, [gameState.mining.efficiency]);
+    return result;
+  }, [updateGameState]);
 
   const exchangeShinyGems = useCallback((amount: number): boolean => {
-    setGameState(prev => {
-      if (prev.shinyGems < amount) {
-        return prev;
-      }
+    let success = false;
 
-      const gemsToAdd = amount * 10;
+    updateGameState(state => {
+      if (state.shinyGems < amount) return state;
 
+      success = true;
       return {
-        ...prev,
-        shinyGems: prev.shinyGems - amount,
-        gems: prev.gems + gemsToAdd,
-        statistics: {
-          ...prev.statistics,
-          gemsEarned: prev.statistics.gemsEarned + gemsToAdd,
-        },
+        ...state,
+        shinyGems: state.shinyGems - amount,
+        gems: state.gems + (amount * 10),
       };
     });
 
-    return true;
-  }, []);
-
-  const plantSeed = useCallback((): boolean => {
-    setGameState(prev => {
-      if (prev.gardenOfGrowth.isPlanted || prev.coins < prev.gardenOfGrowth.seedCost) {
-        return prev;
-      }
-
-      const now = new Date();
-      return {
-        ...prev,
-        coins: prev.coins - prev.gardenOfGrowth.seedCost,
-        gardenOfGrowth: {
-          ...prev.gardenOfGrowth,
-          isPlanted: true,
-          plantedAt: now,
-          lastWatered: now,
-          waterHoursRemaining: 24, // Start with 24 hours of water
-        },
-      };
-    });
-
-    return true;
-  }, []);
-
-  const buyWater = useCallback((hours: number): boolean => {
-    const waterCosts = {
-      24: 1000,
-      72: 2800,
-      168: 6500,
-      720: 25000,
-    };
-
-    const cost = waterCosts[hours as keyof typeof waterCosts] || 1000;
-
-    setGameState(prev => {
-      if (prev.coins < cost) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        coins: prev.coins - cost,
-        gardenOfGrowth: {
-          ...prev.gardenOfGrowth,
-          waterHoursRemaining: prev.gardenOfGrowth.waterHoursRemaining + hours,
-          lastWatered: new Date(),
-        },
-      };
-    });
-
-    return true;
-  }, []);
-
-  const claimDailyReward = useCallback((): boolean => {
-    setGameState(prev => {
-      if (!prev.dailyRewards.availableReward) return prev;
-
-      const reward = prev.dailyRewards.availableReward;
-      const now = new Date();
-
-      return {
-        ...prev,
-        coins: prev.coins + reward.coins,
-        gems: prev.gems + reward.gems,
-        dailyRewards: {
-          ...prev.dailyRewards,
-          lastClaimDate: now,
-          currentStreak: reward.day,
-          maxStreak: Math.max(prev.dailyRewards.maxStreak, reward.day),
-          availableReward: null,
-          rewardHistory: [...prev.dailyRewards.rewardHistory, { ...reward, claimed: true, claimDate: now }],
-        },
-        statistics: {
-          ...prev.statistics,
-          coinsEarned: prev.statistics.coinsEarned + reward.coins,
-          gemsEarned: prev.statistics.gemsEarned + reward.gems,
-        },
-      };
-    });
-
-    return true;
-  }, []);
-
-  const upgradeSkill = useCallback((skillId: string): boolean => {
-    setGameState(prev => {
-      const skillCosts = {
-        combat_mastery: 1,
-        knowledge_boost: 2,
-        treasure_hunter: 2,
-        durability_expert: 3,
-        streak_master: 3,
-        health_regeneration: 4,
-      };
-
-      const cost = skillCosts[skillId as keyof typeof skillCosts] || 1;
-      
-      if (prev.progression.skillPoints < cost) return prev;
-
-      return {
-        ...prev,
-        progression: {
-          ...prev.progression,
-          skillPoints: prev.progression.skillPoints - cost,
-          unlockedSkills: [...prev.progression.unlockedSkills, skillId],
-        },
-      };
-    });
-
-    return true;
-  }, []);
-
-  const prestige = useCallback((): boolean => {
-    setGameState(prev => {
-      if (prev.progression.level < 50) return prev;
-
-      const prestigePoints = Math.floor(prev.progression.level / 10);
-
-      return {
-        ...prev,
-        progression: {
-          ...initialProgression,
-          prestigeLevel: prev.progression.prestigeLevel + 1,
-          prestigePoints: prev.progression.prestigePoints + prestigePoints,
-        },
-      };
-    });
-
-    return true;
-  }, []);
-
-  const claimOfflineRewards = useCallback(() => {
-    setGameState(prev => ({
-      ...prev,
-      coins: prev.coins + prev.offlineProgress.offlineCoins,
-      gems: prev.gems + prev.offlineProgress.offlineGems,
-      statistics: {
-        ...prev.statistics,
-        coinsEarned: prev.statistics.coinsEarned + prev.offlineProgress.offlineCoins,
-        gemsEarned: prev.statistics.gemsEarned + prev.offlineProgress.offlineGems,
-      },
-      offlineProgress: {
-        ...prev.offlineProgress,
-        offlineCoins: 0,
-        offlineGems: 0,
-        offlineTime: 0,
-      },
-    }));
-  }, []);
-
-  const bulkSell = useCallback((itemIds: string[], type: 'weapon' | 'armor') => {
-    setGameState(prev => {
-      const items = type === 'weapon' ? prev.inventory.weapons : prev.inventory.armor;
-      const selectedItems = items.filter(item => itemIds.includes(item.id));
-      const totalValue = selectedItems.reduce((sum, item) => sum + item.sellPrice, 0);
-
-      return {
-        ...prev,
-        coins: prev.coins + totalValue,
-        inventory: {
-          ...prev.inventory,
-          weapons: type === 'weapon' 
-            ? prev.inventory.weapons.filter(w => !itemIds.includes(w.id))
-            : prev.inventory.weapons,
-          armor: type === 'armor'
-            ? prev.inventory.armor.filter(a => !itemIds.includes(a.id))
-            : prev.inventory.armor,
-        },
-        statistics: {
-          ...prev.statistics,
-          itemsSold: prev.statistics.itemsSold + selectedItems.length,
-        },
-      };
-    });
-  }, []);
-
-  const bulkUpgrade = useCallback((itemIds: string[], type: 'weapon' | 'armor') => {
-    setGameState(prev => {
-      const items = type === 'weapon' ? prev.inventory.weapons : prev.inventory.armor;
-      const selectedItems = items.filter(item => itemIds.includes(item.id));
-      const totalCost = selectedItems.reduce((sum, item) => sum + item.upgradeCost, 0);
-
-      if (prev.gems < totalCost) return prev;
-
-      const updatedItems = items.map(item => {
-        if (itemIds.includes(item.id)) {
-          return {
-            ...item,
-            level: item.level + 1,
-            upgradeCost: Math.floor(item.upgradeCost * 1.5),
-            sellPrice: Math.floor(item.sellPrice * 1.2),
-          };
-        }
-        return item;
-      });
-
-      return {
-        ...prev,
-        gems: prev.gems - totalCost,
-        inventory: {
-          ...prev.inventory,
-          weapons: type === 'weapon' ? updatedItems as Weapon[] : prev.inventory.weapons,
-          armor: type === 'armor' ? updatedItems as Armor[] : prev.inventory.armor,
-          currentWeapon: type === 'weapon' && prev.inventory.currentWeapon && itemIds.includes(prev.inventory.currentWeapon.id)
-            ? updatedItems.find(w => w.id === prev.inventory.currentWeapon?.id) as Weapon || null
-            : prev.inventory.currentWeapon,
-          currentArmor: type === 'armor' && prev.inventory.currentArmor && itemIds.includes(prev.inventory.currentArmor.id)
-            ? updatedItems.find(a => a.id === prev.inventory.currentArmor?.id) as Armor || null
-            : prev.inventory.currentArmor,
-        },
-        statistics: {
-          ...prev.statistics,
-          itemsUpgraded: prev.statistics.itemsUpgraded + selectedItems.length,
-        },
-      };
-    });
-    updatePlayerStats();
-  }, [updatePlayerStats]);
-
-  const updateSettings = useCallback((newSettings: Partial<GameSettings>) => {
-    setGameState(prev => ({
-      ...prev,
-      settings: {
-        ...prev.settings,
-        ...newSettings,
-      },
-    }));
-  }, []);
+    return success;
+  }, [updateGameState]);
 
   const discardItem = useCallback((itemId: string, type: 'weapon' | 'armor') => {
-    setGameState(prev => ({
-      ...prev,
-      inventory: {
-        ...prev.inventory,
-        weapons: type === 'weapon' 
-          ? prev.inventory.weapons.filter(w => w.id !== itemId)
-          : prev.inventory.weapons,
-        armor: type === 'armor'
-          ? prev.inventory.armor.filter(a => a.id !== itemId)
-          : prev.inventory.armor,
-      },
-    }));
-  }, []);
+    updateGameState(state => {
+      if (type === 'weapon') {
+        return {
+          ...state,
+          inventory: {
+            ...state.inventory,
+            weapons: state.inventory.weapons.filter(w => w.id !== itemId),
+          },
+        };
+      } else {
+        return {
+          ...state,
+          inventory: {
+            ...state.inventory,
+            armor: state.inventory.armor.filter(a => a.id !== itemId),
+          },
+        };
+      }
+    });
+  }, [updateGameState]);
 
   const purchaseRelic = useCallback((relicId: string): boolean => {
-    setGameState(prev => {
-      const relic = prev.yojefMarket.items.find(r => r.id === relicId);
-      if (!relic || prev.gems < relic.cost || prev.inventory.equippedRelics.length >= 5) {
-        return prev;
-      }
+    let success = false;
 
+    updateGameState(state => {
+      const relic = state.yojefMarket.items.find(r => r.id === relicId);
+      if (!relic || state.gems < relic.cost || state.inventory.equippedRelics.length >= 5) return state;
+
+      success = true;
       return {
-        ...prev,
-        gems: prev.gems - relic.cost,
+        ...state,
+        gems: state.gems - relic.cost,
         inventory: {
-          ...prev.inventory,
-          relics: [...prev.inventory.relics, relic],
-          equippedRelics: [...prev.inventory.equippedRelics, relic],
+          ...state.inventory,
+          relics: [...state.inventory.relics, relic],
+          equippedRelics: [...state.inventory.equippedRelics, relic],
         },
         yojefMarket: {
-          ...prev.yojefMarket,
-          items: prev.yojefMarket.items.filter(r => r.id !== relicId),
+          ...state.yojefMarket,
+          items: state.yojefMarket.items.filter(r => r.id !== relicId),
         },
       };
     });
 
-    return true;
-  }, []);
+    return success;
+  }, [updateGameState]);
 
   const upgradeRelic = useCallback((relicId: string) => {
-    setGameState(prev => {
-      const relic = prev.inventory.relics.find(r => r.id === relicId);
-      if (!relic || prev.gems < relic.upgradeCost) return prev;
+    updateGameState(state => {
+      const relic = state.inventory.relics.find(r => r.id === relicId);
+      if (!relic || state.gems < relic.upgradeCost) return state;
 
-      const updatedRelics = prev.inventory.relics.map(r =>
+      const updatedRelics = state.inventory.relics.map(r =>
         r.id === relicId
-          ? { 
-              ...r, 
-              level: r.level + 1, 
+          ? {
+              ...r,
+              level: r.level + 1,
               upgradeCost: Math.floor(r.upgradeCost * 1.5),
               baseAtk: r.baseAtk ? r.baseAtk + 22 : undefined,
               baseDef: r.baseDef ? r.baseDef + 15 : undefined,
@@ -1093,563 +894,329 @@ export const useGameState = () => {
           : r
       );
 
-      const updatedEquippedRelics = prev.inventory.equippedRelics.map(r =>
-        r.id === relicId ? updatedRelics.find(ur => ur.id === relicId)! : r
+      const updatedEquippedRelics = state.inventory.equippedRelics.map(r =>
+        r.id === relicId ? updatedRelics.find(ur => ur.id === relicId) || r : r
       );
 
       return {
-        ...prev,
-        gems: prev.gems - relic.upgradeCost,
+        ...state,
+        gems: state.gems - relic.upgradeCost,
         inventory: {
-          ...prev.inventory,
+          ...state.inventory,
           relics: updatedRelics,
           equippedRelics: updatedEquippedRelics,
         },
       };
     });
-    updatePlayerStats();
-  }, [updatePlayerStats]);
+  }, [updateGameState]);
 
   const equipRelic = useCallback((relicId: string) => {
-    setGameState(prev => {
-      const relic = prev.inventory.relics.find(r => r.id === relicId);
-      if (!relic || prev.inventory.equippedRelics.length >= 5 || 
-          prev.inventory.equippedRelics.some(r => r.id === relicId)) {
-        return prev;
-      }
+    updateGameState(state => {
+      const relic = state.inventory.relics.find(r => r.id === relicId);
+      if (!relic || state.inventory.equippedRelics.length >= 5 || state.inventory.equippedRelics.some(r => r.id === relicId)) return state;
 
       return {
-        ...prev,
+        ...state,
         inventory: {
-          ...prev.inventory,
-          equippedRelics: [...prev.inventory.equippedRelics, relic],
+          ...state.inventory,
+          equippedRelics: [...state.inventory.equippedRelics, relic],
         },
       };
     });
-    updatePlayerStats();
-  }, [updatePlayerStats]);
+  }, [updateGameState]);
 
   const unequipRelic = useCallback((relicId: string) => {
-    setGameState(prev => ({
-      ...prev,
+    updateGameState(state => ({
+      ...state,
       inventory: {
-        ...prev.inventory,
-        equippedRelics: prev.inventory.equippedRelics.filter(r => r.id !== relicId),
+        ...state.inventory,
+        equippedRelics: state.inventory.equippedRelics.filter(r => r.id !== relicId),
       },
     }));
-    updatePlayerStats();
-  }, [updatePlayerStats]);
+  }, [updateGameState]);
 
   const sellRelic = useCallback((relicId: string) => {
-    setGameState(prev => ({
-      ...prev,
+    updateGameState(state => ({
+      ...state,
       inventory: {
-        ...prev.inventory,
-        relics: prev.inventory.relics.filter(r => r.id !== relicId),
-        equippedRelics: prev.inventory.equippedRelics.filter(r => r.id !== relicId),
+        ...state.inventory,
+        relics: state.inventory.relics.filter(r => r.id !== relicId),
+        equippedRelics: state.inventory.equippedRelics.filter(r => r.id !== relicId),
       },
     }));
-    updatePlayerStats();
-  }, [updatePlayerStats]);
+  }, [updateGameState]);
 
-  const equipWeapon = useCallback((weapon: Weapon) => {
-    setGameState(prev => ({
-      ...prev,
-      inventory: {
-        ...prev.inventory,
-        currentWeapon: weapon,
-      },
-    }));
-    updatePlayerStats();
-  }, [updatePlayerStats]);
+  const claimDailyReward = useCallback((): boolean => {
+    let success = false;
 
-  const equipArmor = useCallback((armor: Armor) => {
-    setGameState(prev => ({
-      ...prev,
-      inventory: {
-        ...prev.inventory,
-        currentArmor: armor,
-      },
-    }));
-    updatePlayerStats();
-  }, [updatePlayerStats]);
+    updateGameState(state => {
+      if (!state.dailyRewards.availableReward) return state;
 
-  const upgradeWeapon = useCallback((weaponId: string) => {
-    setGameState(prev => {
-      const weapon = prev.inventory.weapons.find(w => w.id === weaponId);
-      if (!weapon || (prev.gems < weapon.upgradeCost && !prev.cheats.infiniteGems)) return prev;
-
-      const updatedWeapons = prev.inventory.weapons.map(w =>
-        w.id === weaponId
-          ? { ...w, level: w.level + 1, upgradeCost: Math.floor(w.upgradeCost * 1.5), sellPrice: Math.floor(w.sellPrice * 1.2) }
-          : w
-      );
-
-      const updatedCurrentWeapon = prev.inventory.currentWeapon?.id === weaponId
-        ? updatedWeapons.find(w => w.id === weaponId) || null
-        : prev.inventory.currentWeapon;
+      success = true;
+      const reward = state.dailyRewards.availableReward;
 
       return {
-        ...prev,
-        gems: prev.cheats.infiniteGems ? prev.gems : prev.gems - weapon.upgradeCost,
-        inventory: {
-          ...prev.inventory,
-          weapons: updatedWeapons,
-          currentWeapon: updatedCurrentWeapon,
-        },
-        statistics: {
-          ...prev.statistics,
-          itemsUpgraded: prev.statistics.itemsUpgraded + 1,
+        ...state,
+        coins: state.coins + reward.coins,
+        gems: state.gems + reward.gems,
+        dailyRewards: {
+          ...state.dailyRewards,
+          availableReward: null,
+          lastClaimDate: new Date(),
+          rewardHistory: [...state.dailyRewards.rewardHistory, { ...reward, claimed: true, claimDate: new Date() }],
         },
       };
     });
-    updatePlayerStats();
-  }, [updatePlayerStats]);
 
-  const upgradeArmor = useCallback((armorId: string) => {
-    setGameState(prev => {
-      const armor = prev.inventory.armor.find(a => a.id === armorId);
-      if (!armor || (prev.gems < armor.upgradeCost && !prev.cheats.infiniteGems)) return prev;
+    return success;
+  }, [updateGameState]);
 
-      const updatedArmor = prev.inventory.armor.map(a =>
-        a.id === armorId
-          ? { ...a, level: a.level + 1, upgradeCost: Math.floor(a.upgradeCost * 1.5), sellPrice: Math.floor(a.sellPrice * 1.2) }
-          : a
-      );
-
-      const updatedCurrentArmor = prev.inventory.currentArmor?.id === armorId
-        ? updatedArmor.find(a => a.id === armorId) || null
-        : prev.inventory.currentArmor;
-
-      return {
-        ...prev,
-        gems: prev.cheats.infiniteGems ? prev.gems : prev.gems - armor.upgradeCost,
-        inventory: {
-          ...prev.inventory,
-          armor: updatedArmor,
-          currentArmor: updatedCurrentArmor,
-        },
-        statistics: {
-          ...prev.statistics,
-          itemsUpgraded: prev.statistics.itemsUpgraded + 1,
-        },
-      };
-    });
-    updatePlayerStats();
-  }, [updatePlayerStats]);
-
-  const sellWeapon = useCallback((weaponId: string) => {
-    setGameState(prev => {
-      const weapon = prev.inventory.weapons.find(w => w.id === weaponId);
-      if (!weapon || prev.inventory.currentWeapon?.id === weaponId) return prev;
-
-      return {
-        ...prev,
-        coins: prev.coins + weapon.sellPrice,
-        inventory: {
-          ...prev.inventory,
-          weapons: prev.inventory.weapons.filter(w => w.id !== weaponId),
-        },
-        statistics: {
-          ...prev.statistics,
-          itemsSold: prev.statistics.itemsSold + 1,
-        },
-      };
-    });
+  const upgradeSkill = useCallback((skillId: string): boolean => {
+    // Implementation for skill upgrades
+    return false;
   }, []);
 
-  const sellArmor = useCallback((armorId: string) => {
-    setGameState(prev => {
-      const armor = prev.inventory.armor.find(a => a.id === armorId);
-      if (!armor || prev.inventory.currentArmor?.id === armorId) return prev;
-
-      return {
-        ...prev,
-        coins: prev.coins + armor.sellPrice,
-        inventory: {
-          ...prev.inventory,
-          armor: prev.inventory.armor.filter(a => a.id !== armorId),
-        },
-        statistics: {
-          ...prev.statistics,
-          itemsSold: prev.statistics.itemsSold + 1,
-        },
-      };
-    });
+  const prestige = useCallback((): boolean => {
+    // Implementation for prestige system
+    return false;
   }, []);
 
-  const upgradeResearch = useCallback((type: 'atk' | 'def' | 'hp') => {
-    const researchCost = calculateResearchCost(gameState.research[type].level);
-    setGameState(prev => {
-      if (prev.coins < researchCost && !prev.cheats.infiniteCoins) return prev;
-
-      const newLevel = prev.research[type].level + 1;
-
-      return {
-        ...prev,
-        coins: prev.cheats.infiniteCoins ? prev.coins : prev.coins - researchCost,
-        research: {
-          ...prev.research,
-          [type]: {
-            level: newLevel,
-            totalSpent: prev.research[type].totalSpent + researchCost,
-          },
-        },
-        statistics: {
-          ...prev.statistics,
-          totalResearchSpent: prev.statistics.totalResearchSpent + researchCost,
-        },
-      };
-    });
-    updatePlayerStats();
-    checkAndUnlockAchievements();
-  }, [gameState.research, updatePlayerStats, checkAndUnlockAchievements]);
-
-  const openChest = useCallback((chestCost: number): ChestReward | null => {
-    if (gameState.coins < chestCost && !gameState.cheats.infiniteCoins) return null;
-
-    const numItems = Math.floor(Math.random() * 3) + 2;
-    const bonusGems = Math.floor(Math.random() * 15) + 10;
-    const items: (Weapon | Armor)[] = [];
-
-    // Get rarity weights based on chest cost
-    const rarityWeights = getChestRarityWeights(chestCost);
-    const rarities = ['common', 'rare', 'epic', 'legendary', 'mythical'];
-
-    for (let i = 0; i < numItems; i++) {
-      const isWeapon = Math.random() < 0.5;
-      
-      // Select rarity based on weights
-      const random = Math.random() * 100;
-      let cumulative = 0;
-      let selectedRarity = 'common';
-      
-      for (let j = 0; j < rarityWeights.length; j++) {
-        cumulative += rarityWeights[j];
-        if (random <= cumulative) {
-          selectedRarity = rarities[j];
-          break;
-        }
-      }
-      
-      // 5% chance for enchanted items
-      const isEnchanted = Math.random() < 0.05;
-      
-      const item = isWeapon ? generateWeapon(false, selectedRarity, isEnchanted) : generateArmor(false, selectedRarity, isEnchanted);
-      items.push(item);
-      updateCollectionBook(item);
-    }
-
-    const chestReward: ChestReward = {
-      type: Math.random() < 0.5 ? 'weapon' : 'armor',
-      items,
-    };
-
-    const streakMultiplier = gameState.knowledgeStreak.multiplier;
-    const finalBonusGems = Math.floor(bonusGems * streakMultiplier);
-
-    setGameState(prev => ({
-      ...prev,
-      coins: prev.cheats.infiniteCoins ? prev.coins : prev.coins - chestCost,
-      gems: prev.gems + finalBonusGems,
-      inventory: {
-        ...prev.inventory,
-        weapons: [...prev.inventory.weapons, ...items.filter(item => 'baseAtk' in item) as Weapon[]],
-        armor: [...prev.inventory.armor, ...items.filter(item => 'baseDef' in item) as Armor[]],
-      },
-      statistics: {
-        ...prev.statistics,
-        chestsOpened: prev.statistics.chestsOpened + 1,
-        gemsEarned: prev.statistics.gemsEarned + finalBonusGems,
+  const claimOfflineRewards = useCallback(() => {
+    updateGameState(state => ({
+      ...state,
+      coins: state.coins + state.offlineProgress.offlineCoins,
+      gems: state.gems + state.offlineProgress.offlineGems,
+      offlineProgress: {
+        ...state.offlineProgress,
+        offlineCoins: 0,
+        offlineGems: 0,
+        offlineTime: 0,
       },
     }));
+  }, [updateGameState]);
 
-    checkAndUnlockAchievements();
-
-    return chestReward;
-  }, [gameState.coins, gameState.knowledgeStreak.multiplier, gameState.cheats.infiniteCoins, updateCollectionBook, checkAndUnlockAchievements]);
-
-  const purchaseMythical = useCallback((): { item: Weapon | Armor; type: 'weapon' | 'armor' } | null => {
-    const MYTHICAL_COST = 50000;
-    if (gameState.coins < MYTHICAL_COST && !gameState.cheats.infiniteCoins) return null;
-
-    const isWeapon = Math.random() < 0.5;
-    const item = isWeapon ? generateMythicalWeapon() : generateMythicalArmor();
-    const type = isWeapon ? 'weapon' : 'armor';
-
-    updateCollectionBook(item);
-
-    setGameState(prev => ({
-      ...prev,
-      coins: prev.cheats.infiniteCoins ? prev.coins : prev.coins - MYTHICAL_COST,
-      inventory: {
-        ...prev.inventory,
-        weapons: isWeapon ? [...prev.inventory.weapons, item as Weapon] : prev.inventory.weapons,
-        armor: !isWeapon ? [...prev.inventory.armor, item as Armor] : prev.inventory.armor,
-      },
-      statistics: {
-        ...prev.statistics,
-        itemsCollected: prev.statistics.itemsCollected + 1,
-      },
-    }));
-
-    checkAndUnlockAchievements();
-
-    return { item, type };
-  }, [gameState.coins, gameState.cheats.infiniteCoins, updateCollectionBook, checkAndUnlockAchievements]);
-
-  const startCombat = useCallback(() => {
-    let enemy = generateEnemy(gameState.zone);
-    
-    if (gameState.gameMode.current === 'crazy') {
-      enemy = {
-        ...enemy,
-        hp: enemy.hp * 3,
-        maxHp: enemy.maxHp * 3,
-        atk: enemy.atk * 3,
-        def: enemy.def * 2,
-      };
-    }
-    
-    setGameState(prev => ({
-      ...prev,
-      currentEnemy: enemy,
-      inCombat: true,
-      playerStats: { 
-        ...prev.playerStats, 
-        hp: prev.playerStats.maxHp
-      },
-      combatLog: [`You encounter a ${enemy.name} in Zone ${enemy.zone}!`],
-    }));
-  }, [gameState.zone, gameState.gameMode.current]);
-
-  const attack = useCallback((hit: boolean, category?: string) => {
-    setGameState(prev => {
-      if (!prev.currentEnemy || !prev.inCombat) return prev;
-
-      if (category) {
-        updateStatistics(category, hit);
-      }
-      updateKnowledgeStreak(hit);
-
-      // Award experience for answering questions
-      const experienceGained = hit ? 10 : 5;
-      updateProgression(experienceGained);
-
-      let newCombatLog = [...prev.combatLog];
-      let newPlayerHp = prev.playerStats.hp;
-      let newEnemyHp = prev.currentEnemy.hp;
-      let combatEnded = false;
-      let playerWon = false;
-
-      if (hit) {
-        let baseDamage = Math.max(1, prev.playerStats.atk - prev.currentEnemy.def);
-        let finalDamage = baseDamage;
-
-        // Reduce durability of equipped items
-        const updatedInventory = { ...prev.inventory };
-        if (updatedInventory.currentWeapon && updatedInventory.currentWeapon.durability > 0) {
-          updatedInventory.currentWeapon = {
-            ...updatedInventory.currentWeapon,
-            durability: Math.max(0, updatedInventory.currentWeapon.durability - 1)
-          };
-          updatedInventory.weapons = updatedInventory.weapons.map(w => 
-            w.id === updatedInventory.currentWeapon?.id ? updatedInventory.currentWeapon : w
-          );
-        }
-        if (updatedInventory.currentArmor && updatedInventory.currentArmor.durability > 0) {
-          updatedInventory.currentArmor = {
-            ...updatedInventory.currentArmor,
-            durability: Math.max(0, updatedInventory.currentArmor.durability - 1)
-          };
-          updatedInventory.armor = updatedInventory.armor.map(a => 
-            a.id === updatedInventory.currentArmor?.id ? updatedInventory.currentArmor : a
-          );
-        }
-
-        newEnemyHp = Math.max(0, prev.currentEnemy.hp - finalDamage);
-        newCombatLog.push(`You deal ${finalDamage} damage to the ${prev.currentEnemy.name}!`);
-        
-        // Check if enemy is defeated
-        if (newEnemyHp <= 0) {
-          combatEnded = true;
-          playerWon = true;
-          newCombatLog.push(`You defeated the ${prev.currentEnemy.name}!`);
-          
-          // Handle victory rewards
-          let coinMultiplier = 1;
-          let gemMultiplier = 1;
-          
-          switch (prev.gameMode.current) {
-            case 'blitz':
-              coinMultiplier = 1.25;
-              gemMultiplier = 1.1;
-              break;
-            case 'crazy':
-              coinMultiplier = 6;
-              gemMultiplier = 6;
-              break;
-          }
-
-          coinMultiplier *= prev.knowledgeStreak.multiplier;
-          gemMultiplier *= prev.knowledgeStreak.multiplier;
-
-          const baseCoins = prev.zone * 8 + Math.floor(Math.random() * 15);
-          const baseGems = Math.floor(Math.random() * 3) + 1;
-          
-          const coinsEarned = Math.floor(baseCoins * coinMultiplier);
-          const gemsEarned = Math.floor(baseGems * gemMultiplier);
-          
-          newCombatLog.push(`You earned ${coinsEarned} coins and ${gemsEarned} gems!`);
-          
-          // Check for item drops from zone 10+
-          let droppedItems: (Weapon | Armor)[] = [];
-          if (prev.currentEnemy.canDropItems && Math.random() < 0.15) { // 15% drop chance
-            const isWeapon = Math.random() < 0.5;
-            const droppedItem = isWeapon ? generateWeapon() : generateArmor();
-            droppedItems.push(droppedItem);
-            newCombatLog.push(`The ${prev.currentEnemy.name} dropped a ${droppedItem.name}!`);
-            updateCollectionBook(droppedItem);
-          }
-          
-          const newZone = prev.zone + 1;
-          const newIsPremium = newZone >= 50;
-          
-          return {
-            ...prev,
-            coins: prev.coins + coinsEarned,
-            gems: prev.gems + gemsEarned,
-            zone: newZone,
-            isPremium: newIsPremium,
-            currentEnemy: null,
-            inCombat: false,
-            combatLog: newCombatLog,
-            inventory: {
-              ...updatedInventory,
-              weapons: [...updatedInventory.weapons, ...droppedItems.filter(item => 'baseAtk' in item) as Weapon[]],
-              armor: [...updatedInventory.armor, ...droppedItems.filter(item => 'baseDef' in item) as Armor[]],
-            },
-            statistics: {
-              ...prev.statistics,
-              zonesReached: Math.max(prev.statistics.zonesReached, newZone),
-              coinsEarned: prev.statistics.coinsEarned + coinsEarned,
-              gemsEarned: prev.statistics.gemsEarned + gemsEarned,
-              totalVictories: prev.statistics.totalVictories + 1,
-              totalDamageDealt: prev.statistics.totalDamageDealt + finalDamage,
-            },
-          };
-        }
+  const bulkSell = useCallback((itemIds: string[], type: 'weapon' | 'armor') => {
+    updateGameState(state => {
+      if (type === 'weapon') {
+        const weaponsToSell = state.inventory.weapons.filter(w => itemIds.includes(w.id) && state.inventory.currentWeapon?.id !== w.id);
+        const totalValue = weaponsToSell.reduce((sum, w) => sum + w.sellPrice, 0);
 
         return {
-          ...prev,
-          currentEnemy: { ...prev.currentEnemy, hp: newEnemyHp },
-          playerStats: { ...prev.playerStats, hp: newPlayerHp },
-          combatLog: newCombatLog,
-          inventory: updatedInventory,
-          statistics: {
-            ...prev.statistics,
-            totalDamageDealt: prev.statistics.totalDamageDealt + finalDamage,
+          ...state,
+          coins: state.coins + totalValue,
+          inventory: {
+            ...state.inventory,
+            weapons: state.inventory.weapons.filter(w => !itemIds.includes(w.id) || state.inventory.currentWeapon?.id === w.id),
           },
         };
       } else {
-        const damage = Math.max(1, prev.currentEnemy.atk - prev.playerStats.def);
-        newPlayerHp = Math.max(0, prev.playerStats.hp - damage);
-        newCombatLog.push(`You missed! The ${prev.currentEnemy.name} deals ${damage} damage to you!`);
-        
-        if (newPlayerHp <= 0) {
-          // Check for revival
-          if (!prev.hasUsedRevival) {
-            newPlayerHp = Math.floor(prev.playerStats.maxHp * 0.5); // Revive with 50% HP
-            newCombatLog.push(`💖 You used your free revival! You're back with ${newPlayerHp} HP!`);
-            
-            return {
-              ...prev,
-              playerStats: { ...prev.playerStats, hp: newPlayerHp },
-              combatLog: newCombatLog,
-              hasUsedRevival: true,
-              statistics: {
-                ...prev.statistics,
-                totalDamageTaken: prev.statistics.totalDamageTaken + damage,
-                revivals: prev.statistics.revivals + 1,
-              },
-            };
-          }
-          
-          combatEnded = true;
-          playerWon = false;
-          newCombatLog.push(`You were defeated by the ${prev.currentEnemy.name}...`);
-          
-          // Handle survival mode
-          if (prev.gameMode.current === 'survival') {
-            const newLives = prev.gameMode.survivalLives - 1;
-            return {
-              ...prev,
-              currentEnemy: null,
-              inCombat: false,
-              combatLog: newCombatLog,
-              playerStats: { ...prev.playerStats, hp: newPlayerHp },
-              gameMode: {
-                ...prev.gameMode,
-                survivalLives: newLives,
-              },
-              statistics: {
-                ...prev.statistics,
-                totalDeaths: prev.statistics.totalDeaths + 1,
-                totalDamageTaken: prev.statistics.totalDamageTaken + damage,
-              },
-            };
-          }
-          
-          return {
-            ...prev,
-            currentEnemy: null,
-            inCombat: false,
-            combatLog: newCombatLog,
-            playerStats: { ...prev.playerStats, hp: newPlayerHp },
-            statistics: {
-              ...prev.statistics,
-              totalDeaths: prev.statistics.totalDeaths + 1,
-              totalDamageTaken: prev.statistics.totalDamageTaken + damage,
-            },
-          };
-        }
+        const armorToSell = state.inventory.armor.filter(a => itemIds.includes(a.id) && state.inventory.currentArmor?.id !== a.id);
+        const totalValue = armorToSell.reduce((sum, a) => sum + a.sellPrice, 0);
 
         return {
-          ...prev,
-          currentEnemy: { ...prev.currentEnemy, hp: newEnemyHp },
-          playerStats: { ...prev.playerStats, hp: newPlayerHp },
-          combatLog: newCombatLog,
-          statistics: {
-            ...prev.statistics,
-            totalDamageTaken: prev.statistics.totalDamageTaken + damage,
+          ...state,
+          coins: state.coins + totalValue,
+          inventory: {
+            ...state.inventory,
+            armor: state.inventory.armor.filter(a => !itemIds.includes(a.id) || state.inventory.currentArmor?.id === a.id),
           },
         };
       }
     });
+  }, [updateGameState]);
 
-    setTimeout(() => {
-      checkAndUnlockAchievements();
-      checkAndUnlockPlayerTags();
-    }, 100);
-  }, [updateStatistics, updateKnowledgeStreak, updateProgression, checkAndUnlockAchievements, checkAndUnlockPlayerTags, updateCollectionBook]);
+  const bulkUpgrade = useCallback((itemIds: string[], type: 'weapon' | 'armor') => {
+    updateGameState(state => {
+      if (type === 'weapon') {
+        const weaponsToUpgrade = state.inventory.weapons.filter(w => itemIds.includes(w.id));
+        const totalCost = weaponsToUpgrade.reduce((sum, w) => sum + w.upgradeCost, 0);
 
-  const resetGame = useCallback(async () => {
-    try {
-      await AsyncStorage.removeItem(STORAGE_KEY);
-      
-      setGameState({
-        ...initialGameState,
-        achievements: initializeAchievements(),
-        statistics: {
-          ...initialStatistics,
-          sessionStartTime: new Date(),
+        if (state.gems < totalCost) return state;
+
+        const updatedWeapons = state.inventory.weapons.map(w =>
+          itemIds.includes(w.id)
+            ? {
+                ...w,
+                level: w.level + 1,
+                upgradeCost: Math.floor(w.upgradeCost * 1.5),
+              }
+            : w
+        );
+
+        return {
+          ...state,
+          gems: state.gems - totalCost,
+          inventory: {
+            ...state.inventory,
+            weapons: updatedWeapons,
+          },
+        };
+      } else {
+        const armorToUpgrade = state.inventory.armor.filter(a => itemIds.includes(a.id));
+        const totalCost = armorToUpgrade.reduce((sum, a) => sum + a.upgradeCost, 0);
+
+        if (state.gems < totalCost) return state;
+
+        const updatedArmor = state.inventory.armor.map(a =>
+          itemIds.includes(a.id)
+            ? {
+                ...a,
+                level: a.level + 1,
+                upgradeCost: Math.floor(a.upgradeCost * 1.5),
+              }
+            : a
+        );
+
+        return {
+          ...state,
+          gems: state.gems - totalCost,
+          inventory: {
+            ...state.inventory,
+            armor: updatedArmor,
+          },
+        };
+      }
+    });
+  }, [updateGameState]);
+
+  const plantSeed = useCallback((): boolean => {
+    let success = false;
+
+    updateGameState(state => {
+      if (state.coins < state.gardenOfGrowth.seedCost || state.gardenOfGrowth.isPlanted) return state;
+
+      success = true;
+      return {
+        ...state,
+        coins: state.coins - state.gardenOfGrowth.seedCost,
+        gardenOfGrowth: {
+          ...state.gardenOfGrowth,
+          isPlanted: true,
+          plantedAt: new Date(),
+          lastWatered: new Date(),
+          waterHoursRemaining: 24,
         },
-        playerTags: initializePlayerTags(),
-      });
-    } catch (error) {
-      console.error('Error resetting game:', error);
-    }
-  }, []);
+      };
+    });
+
+    return success;
+  }, [updateGameState]);
+
+  const buyWater = useCallback((hours: number): boolean => {
+    let success = false;
+
+    updateGameState(state => {
+      const cost = (hours / 24) * state.gardenOfGrowth.waterCost;
+      if (state.coins < cost) return state;
+
+      success = true;
+      return {
+        ...state,
+        coins: state.coins - cost,
+        gardenOfGrowth: {
+          ...state.gardenOfGrowth,
+          waterHoursRemaining: state.gardenOfGrowth.waterHoursRemaining + hours,
+        },
+      };
+    });
+
+    return success;
+  }, [updateGameState]);
+
+  const updateSettings = useCallback((newSettings: Partial<typeof gameState.settings>) => {
+    updateGameState(state => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        ...newSettings,
+      },
+    }));
+  }, [updateGameState]);
+
+  const addCoins = useCallback((amount: number) => {
+    updateGameState(state => ({
+      ...state,
+      coins: state.coins + amount,
+    }));
+  }, [updateGameState]);
+
+  const addGems = useCallback((amount: number) => {
+    updateGameState(state => ({
+      ...state,
+      gems: state.gems + amount,
+    }));
+  }, [updateGameState]);
+
+  const teleportToZone = useCallback((zone: number) => {
+    updateGameState(state => ({
+      ...state,
+      zone: Math.max(1, zone),
+    }));
+  }, [updateGameState]);
+
+  const setExperience = useCallback((xp: number) => {
+    updateGameState(state => ({
+      ...state,
+      progression: {
+        ...state.progression,
+        experience: Math.max(0, xp),
+      },
+    }));
+  }, [updateGameState]);
+
+  const rollSkill = useCallback((): boolean => {
+    let success = false;
+
+    updateGameState(state => {
+      if (state.coins < 100) return state;
+
+      const skillTypes = ['coin_vacuum', 'treasurer', 'xp_surge', 'luck_gem', 'enchanter'];
+      const randomType = skillTypes[Math.floor(Math.random() * skillTypes.length)] as MenuSkill['type'];
+      
+      const skillNames = {
+        coin_vacuum: 'Coin Vacuum',
+        treasurer: 'Treasurer',
+        xp_surge: 'XP Surge',
+        luck_gem: 'Luck Gem',
+        enchanter: 'Enchanter'
+      };
+
+      const skillDescriptions = {
+        coin_vacuum: 'Get 15 free coins per minute of play time',
+        treasurer: 'Guarantees next chest opened is epic or better',
+        xp_surge: 'Gives 300% XP gains for 24 hours',
+        luck_gem: 'All gems mined for 1 hour are shiny gems',
+        enchanter: 'Epic+ drops have 80% chance to be enchanted'
+      };
+
+      const duration = randomType === 'luck_gem' ? 1 : randomType === 'treasurer' ? 0.1 : 24;
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + duration * 60 * 60 * 1000);
+
+      const newSkill: MenuSkill = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: skillNames[randomType],
+        description: skillDescriptions[randomType],
+        duration,
+        activatedAt: now,
+        expiresAt,
+        type: randomType,
+      };
+
+      success = true;
+      return {
+        ...state,
+        coins: state.coins - 100,
+        skills: {
+          ...state.skills,
+          activeMenuSkill: newSkill,
+          lastRollTime: now,
+        },
+      };
+    });
+
+    return success;
+  }, [updateGameState]);
 
   return {
     gameState,
@@ -1669,7 +1236,6 @@ export const useGameState = () => {
     setGameMode,
     toggleCheat,
     generateCheatItem,
-    checkAndUnlockAchievements,
     mineGem,
     exchangeShinyGems,
     discardItem,
@@ -1678,14 +1244,74 @@ export const useGameState = () => {
     equipRelic,
     unequipRelic,
     sellRelic,
-    plantSeed,
-    buyWater,
     claimDailyReward,
     upgradeSkill,
     prestige,
     claimOfflineRewards,
     bulkSell,
     bulkUpgrade,
+    plantSeed,
+    buyWater,
     updateSettings,
+    addCoins,
+    addGems,
+    teleportToZone,
+    setExperience,
+    rollSkill,
+    selectAdventureSkill,
+    skipAdventureSkills,
+    useSkipCard,
   };
+};
+
+// Helper function to generate random adventure skills
+const generateRandomAdventureSkills = (): AdventureSkill[] => {
+  const allSkills: AdventureSkill[] = [
+    {
+      id: 'risker',
+      name: 'Risker',
+      description: 'Lose 15% health but get 20% extra ATK',
+      type: 'risker'
+    },
+    {
+      id: 'lightning_chain',
+      name: 'Lightning Chain',
+      description: 'Every correct answer, deal 15% extra ATK but every wrong answer, be dealt 10% more ATK',
+      type: 'lightning_chain'
+    },
+    {
+      id: 'skip_card',
+      name: 'Skip Card',
+      description: 'Skip any question. Effective only once.',
+      type: 'skip_card'
+    },
+    {
+      id: 'metal_shield',
+      name: 'Metal Shield',
+      description: 'If you are about to die, auto sacrifice 30% ATK to just cancel damage taken',
+      type: 'metal_shield'
+    },
+    {
+      id: 'truth_lies',
+      name: '1 Truth, 2 Lies',
+      description: 'Remove one of the wrong answers in a multi choice question for the ENTIRE adventure',
+      type: 'truth_lies'
+    },
+    {
+      id: 'ramp',
+      name: 'Ramp',
+      description: 'A random stat is doubled but another is reduced by 40%',
+      type: 'ramp'
+    },
+    {
+      id: 'dodge',
+      name: 'Dodge',
+      description: "Don't take damage from the first wrong answer",
+      type: 'dodge'
+    }
+  ];
+
+  // Shuffle and return 3 random skills
+  const shuffled = [...allSkills].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 3);
 };
