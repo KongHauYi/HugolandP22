@@ -133,7 +133,7 @@ export const CollectionBook: React.FC<CollectionBookProps> = ({
           </button>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Tab Navigation - Mobile responsive */}
         <div className="flex gap-2 mb-4">
           {[
             { key: 'weapons', label: 'Weapons', count: discoveredWeapons.length, icon: Sword },
@@ -150,7 +150,7 @@ export const CollectionBook: React.FC<CollectionBookProps> = ({
               }`}
             >
               <Icon className="w-4 h-4" />
-              {label}
+              <span className="hidden sm:inline">{label}</span>
               {count !== undefined && (
                 <span className="bg-black/30 px-2 py-0.5 rounded-full text-xs">
                   {count}

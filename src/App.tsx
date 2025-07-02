@@ -11,17 +11,17 @@ import { PokyegMarket } from './components/PokyegMarket';
 import { Tutorial } from './components/Tutorial';
 import { CheatPanel } from './components/CheatPanel';
 import { Mining } from './components/Mining';
-import { YojefMarket } from './components/YojefMarket';
 import { FloatingIcons } from './components/FloatingIcons';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { DailyRewards } from './components/DailyRewards';
 import { OfflineProgress } from './components/OfflineProgress';
 import { BulkActions } from './components/BulkActions';
 import { HamburgerMenuPage } from './components/HamburgerMenuPage';
-import { Shield, Package, User, Play, RotateCcw, Brain, Crown, Gift, Pickaxe, Package2, Menu, ArrowLeft } from 'lucide-react';
+import { AdventureSkillSelection } from './components/AdventureSkillSelection';
+import { Shield, Package, User, Play, RotateCcw, Brain, Crown, Gift, Pickaxe, Menu, ArrowLeft } from 'lucide-react';
 
 type GameView = 'stats' | 'shop' | 'inventory' | 'research' | 'mining' | 'menu';
-type ModalView = 'collection' | 'gameMode' | 'pokyegMarket' | 'tutorial' | 'cheats' | 'resetConfirm' | 'yojefMarket' | 'dailyRewards' | 'offlineProgress' | 'bulkActions' | null;
+type ModalView = 'collection' | 'gameMode' | 'pokyegMarket' | 'tutorial' | 'cheats' | 'resetConfirm' | 'dailyRewards' | 'offlineProgress' | 'bulkActions' | null;
 
 function App() {
   const {
@@ -63,6 +63,10 @@ function App() {
     addGems,
     teleportToZone,
     setExperience,
+    rollSkill,
+    selectAdventureSkill,
+    skipAdventureSkills,
+    useSkipCard,
   } = useGameState();
 
   const [currentView, setCurrentView] = useState<GameView>('stats');
@@ -77,6 +81,20 @@ function App() {
           <p className="text-white text-xl font-semibold">Loading Hugoland...</p>
           <p className="text-purple-300 text-sm mt-2">Preparing your adventure...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show adventure skill selection modal
+  if (gameState.adventureSkills.showSelectionModal && !gameState.inCombat) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <FloatingIcons />
+        <AdventureSkillSelection
+          availableSkills={gameState.adventureSkills.availableSkills}
+          onSelectSkill={selectAdventureSkill}
+          onSkipSkills={skipAdventureSkills}
+        />
       </div>
     );
   }
@@ -175,6 +193,9 @@ function App() {
           combatLog={gameState.combatLog}
           gameMode={gameState.gameMode}
           knowledgeStreak={gameState.knowledgeStreak}
+          hasUsedRevival={gameState.hasUsedRevival}
+          adventureSkills={gameState.adventureSkills}
+          onUseSkipCard={useSkipCard}
         />
       );
     }
@@ -193,6 +214,8 @@ function App() {
             onAddGems={addGems}
             onTeleportToZone={teleportToZone}
             onSetExperience={setExperience}
+            onRollSkill={rollSkill}
+            onPurchaseRelic={purchaseRelic}
             onBack={() => setCurrentView('stats')}
           />
         );
@@ -311,7 +334,7 @@ function App() {
                   className="px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 transition-all duration-200 flex items-center gap-2 text-sm shadow-md"
                 >
                   <Play className="w-4 h-4" />
-                  Game Mode
+                  <span className="hidden sm:inline">Game Mode</span>
                 </button>
                 
                 <button
@@ -319,7 +342,7 @@ function App() {
                   className="px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 transition-all duration-200 flex items-center gap-2 text-sm shadow-md"
                 >
                   <Gift className="w-4 h-4" />
-                  Daily Rewards
+                  <span className="hidden sm:inline">Daily Rewards</span>
                 </button>
                 
                 <button
@@ -327,7 +350,7 @@ function App() {
                   className="px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 transition-all duration-200 flex items-center gap-2 text-sm shadow-md"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Reset Game
+                  <span className="hidden sm:inline">Reset Game</span>
                 </button>
               </div>
             </div>
@@ -350,7 +373,6 @@ function App() {
             onEquipRelic={equipRelic}
             onUnequipRelic={unequipRelic}
             onSellRelic={sellRelic}
-            onOpenYojefMarket={() => setCurrentModal('yojefMarket')}
           />
         );
       case 'research':
@@ -422,17 +444,6 @@ function App() {
             onToggleCheat={toggleCheat}
             onGenerateItem={generateCheatItem}
             onClose={() => setCurrentModal(null)}
-          />
-        );
-      case 'yojefMarket':
-        return (
-          <YojefMarket
-            relicItems={gameState.yojefMarket.items}
-            gems={gameState.gems}
-            equippedRelicsCount={gameState.inventory.equippedRelics.length}
-            onPurchaseRelic={purchaseRelic}
-            onClose={() => setCurrentModal(null)}
-            nextRefresh={gameState.yojefMarket.nextRefresh}
           />
         );
       case 'dailyRewards':
@@ -532,7 +543,7 @@ function App() {
                   onClick={() => setCurrentModal('bulkActions')}
                   className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all duration-200 text-sm shadow-md"
                 >
-                  <Package2 className="w-4 h-4" />
+                  <Package className="w-4 h-4" />
                   <span className="hidden sm:inline">Bulk</span>
                 </button>
               )}
@@ -555,7 +566,7 @@ function App() {
                 className="flex items-center gap-2 text-indigo-300 hover:text-indigo-200 transition-colors px-3 py-1 rounded-lg hover:bg-white/10"
               >
                 <Package className="w-4 h-4" />
-                <span>Collection</span>
+                <span className="hidden sm:inline">Collection</span>
               </button>
 
               {gameState.dailyRewards.availableReward && (
@@ -564,7 +575,7 @@ function App() {
                   className="flex items-center gap-2 text-green-300 hover:text-green-200 transition-colors animate-pulse px-3 py-1 rounded-lg hover:bg-white/10"
                 >
                   <Gift className="w-4 h-4" />
-                  <span>Daily Reward!</span>
+                  <span className="hidden sm:inline">Daily Reward!</span>
                 </button>
               )}
             </div>
@@ -594,7 +605,7 @@ function App() {
                     }`}
                   >
                     <Icon className="w-4 h-4" />
-                    <span className="hidden xs:inline">{label}</span>
+                    <span className="hidden sm:inline">{label}</span>
                   </button>
                 ))}
               </div>

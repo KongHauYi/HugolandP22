@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Enemy } from '../types/game';
-import { Sword, Shield, Heart, Brain, Clock, Zap, Skull, Flame, RotateCcw } from 'lucide-react';
+import { Sword, Shield, Heart, Brain, Clock, Zap, Skull, Flame, RotateCcw, SkipForward } from 'lucide-react';
 import { TriviaQuestion, getQuestionByZone, checkAnswer } from '../utils/triviaQuestions';
 
 interface CombatProps {
@@ -25,6 +25,18 @@ interface CombatProps {
     multiplier: number;
   };
   hasUsedRevival?: boolean;
+  adventureSkills?: {
+    selectedSkill: any;
+    skillEffects: {
+      skipCardUsed: boolean;
+      metalShieldUsed: boolean;
+      dodgeUsed: boolean;
+      truthLiesActive: boolean;
+      lightningChainActive: boolean;
+      rampActive: boolean;
+    };
+  };
+  onUseSkipCard?: () => void;
 }
 
 export const Combat: React.FC<CombatProps> = ({ 
@@ -34,7 +46,9 @@ export const Combat: React.FC<CombatProps> = ({
   combatLog, 
   gameMode,
   knowledgeStreak,
-  hasUsedRevival = false
+  hasUsedRevival = false,
+  adventureSkills,
+  onUseSkipCard
 }) => {
   const [currentQuestion, setCurrentQuestion] = useState<TriviaQuestion | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -48,14 +62,31 @@ export const Combat: React.FC<CombatProps> = ({
   const questionTime = (gameMode.current === 'blitz' || gameMode.current === 'bloodlust') ? 5 : 8;
 
   useEffect(() => {
-    const question = getQuestionByZone(enemy.zone);
+    let question = getQuestionByZone(enemy.zone);
+    
+    // Apply truth and lies skill effect
+    if (adventureSkills?.skillEffects.truthLiesActive && question.type === 'multiple-choice' && question.options) {
+      const correctIndex = question.correctAnswer as number;
+      const wrongIndices = question.options.map((_, index) => index).filter(i => i !== correctIndex);
+      const indexToRemove = wrongIndices[Math.floor(Math.random() * wrongIndices.length)];
+      
+      const newOptions = question.options.filter((_, index) => index !== indexToRemove);
+      const newCorrectAnswer = correctIndex > indexToRemove ? correctIndex - 1 : correctIndex;
+      
+      question = {
+        ...question,
+        options: newOptions,
+        correctAnswer: newCorrectAnswer
+      };
+    }
+    
     setCurrentQuestion(question);
     setSelectedAnswer(null);
     setTypedAnswer('');
     setTimeLeft(questionTime);
     setShowResult(false);
     setLastAnswerCorrect(null);
-  }, [enemy, questionTime]);
+  }, [enemy, questionTime, adventureSkills?.skillEffects.truthLiesActive]);
 
   useEffect(() => {
     if (!currentQuestion || isAnswering || showResult) return;
@@ -102,6 +133,14 @@ export const Combat: React.FC<CombatProps> = ({
       setShowResult(false);
       setLastAnswerCorrect(null);
     }, 2000);
+  };
+
+  const handleSkipCard = () => {
+    if (onUseSkipCard && adventureSkills?.selectedSkill?.type === 'skip_card' && !adventureSkills.skillEffects.skipCardUsed) {
+      onUseSkipCard();
+      // Automatically answer correctly
+      handleAnswer(currentQuestion?.correctAnswer as number);
+    }
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -153,91 +192,7 @@ export const Combat: React.FC<CombatProps> = ({
 
   return (
     <div className="bg-gradient-to-br from-red-900/80 via-purple-900/80 to-black/80 p-6 rounded-xl shadow-2xl backdrop-blur-sm border border-red-500/50">
-      <div className="text-center mb-6">
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Combat - Zone {enemy.zone}</h2>
-          {getModeIcon()}
-        </div>
-        <p className="text-red-300 text-xl font-semibold">{enemy.name}</p>
-        
-        {/* Game Mode Info */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
-          <span className={`px-3 py-1 rounded-lg ${getModeColor()} text-white font-semibold text-sm`}>
-            {gameMode.current.toUpperCase()} MODE
-          </span>
-          
-          {knowledgeStreak.current > 0 && (
-            <span className="text-yellow-300 flex items-center gap-2 bg-yellow-900/30 px-3 py-1 rounded-lg">
-              🔥 {knowledgeStreak.current} Streak ({Math.round((knowledgeStreak.multiplier - 1) * 100)}% bonus)
-            </span>
-          )}
-
-          {!hasUsedRevival && (
-            <span className="text-green-300 flex items-center gap-2 bg-green-900/30 px-3 py-1 rounded-lg">
-              <RotateCcw className="w-4 h-4" />
-              Revival Available
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Health Bars */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-        <div className="bg-black/40 p-4 rounded-xl border border-green-500/30">
-          <div className="flex items-center gap-3 mb-3">
-            <Heart className="w-5 h-5 text-red-400" />
-            <span className="text-white font-semibold">You</span>
-            {!hasUsedRevival && (
-              <span className="text-green-400 text-xs bg-green-900/30 px-2 py-1 rounded-full">
-                💖 Revival Ready
-              </span>
-            )}
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-4">
-            <div 
-              className="bg-gradient-to-r from-green-500 to-green-400 h-4 rounded-full transition-all duration-300"
-              style={{ width: `${(playerStats.hp / playerStats.maxHp) * 100}%` }}
-            />
-          </div>
-          <p className="text-sm text-gray-300 mt-2 text-center">{playerStats.hp}/{playerStats.maxHp}</p>
-          <div className="flex justify-center gap-4 mt-3 text-sm">
-            <span className="text-orange-400 flex items-center gap-1">
-              <Sword className="w-4 h-4" />
-              {playerStats.atk}
-            </span>
-            <span className="text-blue-400 flex items-center gap-1">
-              <Shield className="w-4 h-4" />
-              {playerStats.def}
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-black/40 p-4 rounded-xl border border-red-500/30">
-          <div className="flex items-center gap-3 mb-3">
-            <Heart className="w-5 h-5 text-red-400" />
-            <span className="text-white font-semibold">{enemy.name}</span>
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-4">
-            <div 
-              className="bg-gradient-to-r from-red-500 to-red-400 h-4 rounded-full transition-all duration-300"
-              style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}
-            />
-          </div>
-          <p className="text-sm text-gray-300 mt-2 text-center">{enemy.hp}/{enemy.maxHp}</p>
-          <div className="flex justify-center gap-4 mt-3 text-sm">
-            <span className="text-orange-400 flex items-center gap-1">
-              <Sword className="w-4 h-4" />
-              {enemy.atk}
-            </span>
-            <span className="text-blue-400 flex items-center gap-1">
-              <Shield className="w-4 h-4" />
-              {enemy.def}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Trivia Question Section */}
+      {/* Question Section - Moved to top */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -328,6 +283,19 @@ export const Combat: React.FC<CombatProps> = ({
               </button>
             </div>
           )}
+
+          {/* Skip Card Button */}
+          {adventureSkills?.selectedSkill?.type === 'skip_card' && !adventureSkills.skillEffects.skipCardUsed && (
+            <div className="mt-4">
+              <button
+                onClick={handleSkipCard}
+                className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all flex items-center gap-2 justify-center"
+              >
+                <SkipForward className="w-4 h-4" />
+                Use Skip Card
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Result Feedback */}
@@ -354,26 +322,119 @@ export const Combat: React.FC<CombatProps> = ({
             )}
           </div>
         )}
+      </div>
 
-        <div className="text-center mt-4 space-y-2">
-          <p className="text-sm text-gray-300">
-            Answer correctly to <span className="text-green-400 font-semibold">deal damage</span>!
-          </p>
-          <p className={`text-sm font-semibold ${
-            gameMode.current === 'blitz' || gameMode.current === 'bloodlust' ? 'text-yellow-400' : 'text-blue-400'
-          }`}>
-            ⏰ You have {questionTime} seconds to answer!
-          </p>
+      {/* Combat Header */}
+      <div className="text-center mb-6">
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Combat - Zone {enemy.zone}</h2>
+          {getModeIcon()}
+        </div>
+        <p className="text-red-300 text-xl font-semibold">{enemy.name}</p>
+        
+        {/* Game Mode Info */}
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
+          <span className={`px-3 py-1 rounded-lg ${getModeColor()} text-white font-semibold text-sm`}>
+            {gameMode.current.toUpperCase()} MODE
+          </span>
+          
+          {knowledgeStreak.current > 0 && (
+            <span className="text-yellow-300 flex items-center gap-2 bg-yellow-900/30 px-3 py-1 rounded-lg">
+              🔥 {knowledgeStreak.current} Streak ({Math.round((knowledgeStreak.multiplier - 1) * 100)}% bonus)
+            </span>
+          )}
+
           {!hasUsedRevival && (
-            <p className="text-green-400 text-sm font-semibold">
-              💖 Don't worry - you get one free revival if you die!
-            </p>
+            <span className="text-green-300 flex items-center gap-2 bg-green-900/30 px-3 py-1 rounded-lg">
+              <RotateCcw className="w-4 h-4" />
+              Revival Available
+            </span>
+          )}
+
+          {/* Adventure Skill Display */}
+          {adventureSkills?.selectedSkill && (
+            <span className="text-purple-300 flex items-center gap-2 bg-purple-900/30 px-3 py-1 rounded-lg">
+              <Zap className="w-4 h-4" />
+              {adventureSkills.selectedSkill.name}
+            </span>
           )}
         </div>
       </div>
 
+      {/* Health Bars */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+        <div className="bg-black/40 p-4 rounded-xl border border-green-500/30">
+          <div className="flex items-center gap-3 mb-3">
+            <Heart className="w-5 h-5 text-red-400" />
+            <span className="text-white font-semibold">You</span>
+            {!hasUsedRevival && (
+              <span className="text-green-400 text-xs bg-green-900/30 px-2 py-1 rounded-full">
+                💖 Revival Ready
+              </span>
+            )}
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-4">
+            <div 
+              className="bg-gradient-to-r from-green-500 to-green-400 h-4 rounded-full transition-all duration-300"
+              style={{ width: `${(playerStats.hp / playerStats.maxHp) * 100}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-300 mt-2 text-center">{playerStats.hp}/{playerStats.maxHp}</p>
+          <div className="flex justify-center gap-4 mt-3 text-sm">
+            <span className="text-orange-400 flex items-center gap-1">
+              <Sword className="w-4 h-4" />
+              {playerStats.atk}
+            </span>
+            <span className="text-blue-400 flex items-center gap-1">
+              <Shield className="w-4 h-4" />
+              {playerStats.def}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-black/40 p-4 rounded-xl border border-red-500/30">
+          <div className="flex items-center gap-3 mb-3">
+            <Heart className="w-5 h-5 text-red-400" />
+            <span className="text-white font-semibold">{enemy.name}</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-4">
+            <div 
+              className="bg-gradient-to-r from-red-500 to-red-400 h-4 rounded-full transition-all duration-300"
+              style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-300 mt-2 text-center">{enemy.hp}/{enemy.maxHp}</p>
+          <div className="flex justify-center gap-4 mt-3 text-sm">
+            <span className="text-orange-400 flex items-center gap-1">
+              <Sword className="w-4 h-4" />
+              {enemy.atk}
+            </span>
+            <span className="text-blue-400 flex items-center gap-1">
+              <Shield className="w-4 h-4" />
+              {enemy.def}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center mt-4 space-y-2">
+        <p className="text-sm text-gray-300">
+          Answer correctly to <span className="text-green-400 font-semibold">deal damage</span>!
+        </p>
+        <p className={`text-sm font-semibold ${
+          gameMode.current === 'blitz' || gameMode.current === 'bloodlust' ? 'text-yellow-400' : 'text-blue-400'
+        }`}>
+          ⏰ You have {questionTime} seconds to answer!
+        </p>
+        {!hasUsedRevival && (
+          <p className="text-green-400 text-sm font-semibold">
+            💖 Don't worry - you get one free revival if you die!
+          </p>
+        )}
+      </div>
+
       {/* Combat Log */}
-      <div className="bg-black/50 rounded-xl p-4 max-h-40 overflow-y-auto border border-gray-600/50">
+      <div className="bg-black/50 rounded-xl p-4 max-h-40 overflow-y-auto border border-gray-600/50 mt-6">
         <h4 className="text-white font-semibold mb-3 text-lg">Combat Log</h4>
         <div className="space-y-2">
           {combatLog.slice(-6).map((log, index) => (

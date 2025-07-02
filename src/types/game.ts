@@ -25,6 +25,8 @@ export interface GameState {
   gardenOfGrowth: GardenOfGrowth;
   settings: GameSettings;
   hasUsedRevival: boolean;
+  skills: SkillsSystem;
+  adventureSkills: AdventureSkillsState;
 }
 
 export interface PlayerStats {
@@ -38,18 +40,9 @@ export interface PlayerStats {
 }
 
 export interface Research {
-  atk: {
-    level: number;
-    totalSpent: number;
-  };
-  def: {
-    level: number;
-    totalSpent: number;
-  };
-  hp: {
-    level: number;
-    totalSpent: number;
-  };
+  level: number;
+  totalSpent: number;
+  availableUpgrades: ('atk' | 'def' | 'hp')[];
 }
 
 export interface Inventory {
@@ -207,13 +200,6 @@ export interface CheatSettings {
 }
 
 export interface Mining {
-  efficiency: number;
-  tools: {
-    basic_pickaxe: boolean;
-    steel_pickaxe: boolean;
-    diamond_pickaxe: boolean;
-    mythical_pickaxe: boolean;
-  };
   totalGemsMined: number;
   totalShinyGemsMined: number;
 }
@@ -299,6 +285,45 @@ export interface GameSettings {
   darkMode: boolean;
   language: 'en' | 'es' | 'fr' | 'de' | 'pt' | 'it' | 'ru' | 'ja' | 'ko' | 'zh';
   notifications: boolean;
+}
+
+export interface SkillsSystem {
+  activeMenuSkill: MenuSkill | null;
+  lastRollTime: Date | null;
+  playTimeThisSession: number;
+  sessionStartTime: Date;
+}
+
+export interface MenuSkill {
+  id: string;
+  name: string;
+  description: string;
+  duration: number; // in hours
+  activatedAt: Date;
+  expiresAt: Date;
+  type: 'coin_vacuum' | 'treasurer' | 'xp_surge' | 'luck_gem' | 'enchanter';
+  isExpired?: boolean;
+}
+
+export interface AdventureSkillsState {
+  selectedSkill: AdventureSkill | null;
+  availableSkills: AdventureSkill[];
+  showSelectionModal: boolean;
+  skillEffects: {
+    skipCardUsed: boolean;
+    metalShieldUsed: boolean;
+    dodgeUsed: boolean;
+    truthLiesActive: boolean;
+    lightningChainActive: boolean;
+    rampActive: boolean;
+  };
+}
+
+export interface AdventureSkill {
+  id: string;
+  name: string;
+  description: string;
+  type: 'risker' | 'lightning_chain' | 'skip_card' | 'metal_shield' | 'truth_lies' | 'ramp' | 'dodge';
 }
 
 export interface TriviaQuestion {

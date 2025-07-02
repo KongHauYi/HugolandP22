@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Research as ResearchType } from '../types/game';
-import { Brain, TrendingUp, Sword, Shield, Heart, Coins } from 'lucide-react';
+import { Brain, TrendingUp, Sword, Shield, Heart, Coins, X } from 'lucide-react';
 import { calculateResearchBonus, calculateResearchCost } from '../utils/gameUtils';
 
 interface ResearchProps {
@@ -16,7 +16,13 @@ export const Research: React.FC<ResearchProps> = ({
   onUpgradeResearch, 
   isPremium 
 }) => {
-  const researchTypes = [
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const cost = calculateResearchCost(research.level);
+  const currentBonus = calculateResearchBonus(research.level);
+  const nextBonus = calculateResearchBonus(research.level + 1);
+
+  const upgradeOptions = [
     {
       key: 'atk' as const,
       name: 'Attack Research',
@@ -24,7 +30,7 @@ export const Research: React.FC<ResearchProps> = ({
       color: 'text-orange-400',
       bgColor: 'bg-orange-900/30',
       borderColor: 'border-orange-500/50',
-      description: 'Increase your attack power'
+      description: 'Increase your attack power by 10%'
     },
     {
       key: 'def' as const,
@@ -33,7 +39,7 @@ export const Research: React.FC<ResearchProps> = ({
       color: 'text-blue-400',
       bgColor: 'bg-blue-900/30',
       borderColor: 'border-blue-500/50',
-      description: 'Increase your defense power'
+      description: 'Increase your defense power by 10%'
     },
     {
       key: 'hp' as const,
@@ -42,9 +48,14 @@ export const Research: React.FC<ResearchProps> = ({
       color: 'text-red-400',
       bgColor: 'bg-red-900/30',
       borderColor: 'border-red-500/50',
-      description: 'Increase your maximum health'
+      description: 'Increase your maximum health by 10%'
     }
   ];
+
+  const handleUpgrade = (type: 'atk' | 'def' | 'hp') => {
+    onUpgradeResearch(type);
+    setShowUpgradeModal(false);
+  };
 
   return (
     <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 p-4 sm:p-6 rounded-lg shadow-2xl">
@@ -53,94 +64,127 @@ export const Research: React.FC<ResearchProps> = ({
           <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
           <h2 className="text-xl sm:text-2xl font-bold text-white">Research Laboratory</h2>
         </div>
-        <p className="text-blue-300 text-sm sm:text-base">Choose your path of advancement</p>
+        <p className="text-blue-300 text-sm sm:text-base">Advance your knowledge and power</p>
       </div>
 
-      {/* Research Trees - Always Horizontal Layout */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
-        {researchTypes.map((type) => {
-          const researchData = research[type.key];
-          const cost = calculateResearchCost(researchData.level);
-          const currentBonus = calculateResearchBonus(researchData.level);
-          const nextBonus = calculateResearchBonus(researchData.level + 1);
-          const Icon = type.icon;
+      {/* Single Research Tree */}
+      <div className="max-w-md mx-auto">
+        <div className="p-4 sm:p-6 rounded-lg border-2 border-purple-500/50 bg-purple-900/30">
+          <div className="text-center mb-4">
+            <Brain className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 text-purple-400" />
+            <h3 className="font-bold text-lg sm:text-xl text-purple-400">
+              Universal Research
+            </h3>
+            <p className="text-gray-300 text-sm mt-2">
+              Choose your path of advancement
+            </p>
+          </div>
 
-          return (
-            <div
-              key={type.key}
-              className={`p-2 sm:p-4 lg:p-6 rounded-lg border-2 ${type.borderColor} ${type.bgColor}`}
-            >
-              <div className="text-center mb-3 sm:mb-4">
-                <Icon className={`w-8 h-8 sm:w-12 sm:h-12 lg:w-16 lg:h-16 mx-auto mb-2 sm:mb-3 ${type.color}`} />
-                <h3 className={`font-bold text-sm sm:text-lg lg:text-xl ${type.color}`}>
-                  {type.name}
-                </h3>
-                <p className="text-gray-300 text-xs sm:text-sm mt-1 sm:mt-2">
-                  {type.description}
+          {/* Current Stats */}
+          <div className="space-y-3 mb-4">
+            <div className="bg-black/30 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-green-400" />
+                <span className="text-white font-semibold text-sm">Research Level</span>
+              </div>
+              <p className="text-2xl font-bold text-green-400">{research.level}</p>
+            </div>
+
+            <div className="bg-black/30 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-yellow-400" />
+                <span className="text-white font-semibold text-sm">Current Bonus</span>
+              </div>
+              <p className="text-2xl font-bold text-yellow-400">+{currentBonus}%</p>
+            </div>
+          </div>
+
+          {/* Upgrade Section */}
+          <div className="bg-black/40 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-white font-semibold text-sm">Next Level</p>
+                <p className="text-gray-300 text-xs">
+                  Bonus: +{currentBonus}% → +{nextBonus}%
                 </p>
               </div>
-
-              {/* Current Stats */}
-              <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
-                <div className="bg-black/30 p-2 sm:p-3 rounded-lg">
-                  <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                    <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-                    <span className="text-white font-semibold text-xs sm:text-sm">Level</span>
-                  </div>
-                  <p className="text-lg sm:text-2xl font-bold text-green-400">{researchData.level}</p>
-                </div>
-
-                <div className="bg-black/30 p-2 sm:p-3 rounded-lg">
-                  <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                    <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />
-                    <span className="text-white font-semibold text-xs sm:text-sm">Bonus</span>
-                  </div>
-                  <p className="text-lg sm:text-2xl font-bold text-yellow-400">+{currentBonus}%</p>
-                </div>
-              </div>
-
-              {/* Upgrade Section */}
-              <div className="bg-black/40 p-2 sm:p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2 sm:mb-3">
-                  <div>
-                    <p className="text-white font-semibold text-xs sm:text-sm">Next Level</p>
-                    <p className="text-gray-300 text-xs">
-                      Bonus: +{currentBonus}% → +{nextBonus}%
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 sm:gap-2 text-yellow-300">
-                    <Coins className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="font-semibold text-xs sm:text-sm">{cost}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => onUpgradeResearch(type.key)}
-                  disabled={coins < cost}
-                  className={`w-full py-2 sm:py-3 rounded-lg font-bold transition-all duration-200 text-xs sm:text-sm ${
-                    coins >= cost
-                      ? `bg-gradient-to-r from-${type.key === 'atk' ? 'orange' : type.key === 'def' ? 'blue' : 'red'}-600 to-${type.key === 'atk' ? 'orange' : type.key === 'def' ? 'blue' : 'red'}-500 text-white hover:scale-105 shadow-lg`
-                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {coins >= cost ? 'Upgrade Research' : 'Insufficient Coins'}
-                </button>
-
-                <div className="mt-2 sm:mt-3 text-center">
-                  <p className="text-xs text-gray-300">
-                    Total spent: {researchData.totalSpent} coins
-                  </p>
-                </div>
+              <div className="flex items-center gap-2 text-yellow-300">
+                <Coins className="w-4 h-4" />
+                <span className="font-semibold text-sm">{cost}</span>
               </div>
             </div>
-          );
-        })}
+
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              disabled={coins < cost}
+              className={`w-full py-3 rounded-lg font-bold transition-all duration-200 text-sm ${
+                coins >= cost
+                  ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:scale-105 shadow-lg'
+                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {coins >= cost ? 'Choose Upgrade Path' : 'Insufficient Coins'}
+            </button>
+
+            <div className="mt-3 text-center">
+              <p className="text-xs text-gray-300">
+                Total spent: {research.totalSpent} coins
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Upgrade Selection Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 p-6 rounded-lg border border-purple-500/50 max-w-2xl w-full">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-white font-bold text-xl">Choose Your Research Path</h3>
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {upgradeOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <button
+                    key={option.key}
+                    onClick={() => handleUpgrade(option.key)}
+                    className={`p-4 rounded-lg border-2 ${option.borderColor} ${option.bgColor} hover:scale-105 transition-all duration-200`}
+                  >
+                    <div className="text-center">
+                      <Icon className={`w-12 h-12 mx-auto mb-3 ${option.color}`} />
+                      <h4 className={`font-bold text-lg ${option.color} mb-2`}>
+                        {option.name}
+                      </h4>
+                      <p className="text-gray-300 text-sm">
+                        {option.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-300 text-sm">
+                Each upgrade provides a permanent 10% bonus to the selected stat
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Info */}
       <div className="mt-4 sm:mt-6 text-center">
         <p className="text-xs sm:text-sm text-gray-300">
-          Each research tree provides a 10% bonus per level to the respective stat
+          Research provides permanent stat bonuses. Choose wisely!
         </p>
       </div>
     </div>

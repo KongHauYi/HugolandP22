@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Inventory as InventoryType, Weapon, Armor, RelicItem } from '../types/game';
-import { Sword, Shield, Gem, Star, Coins, Sparkles, Package, Book } from 'lucide-react';
+import { Sword, Shield, Gem, Star, Coins, Sparkles } from 'lucide-react';
 import { getRarityColor, getRarityBorder, getRarityGlow } from '../utils/gameUtils';
 
 interface InventoryProps {
@@ -16,7 +16,6 @@ interface InventoryProps {
   onEquipRelic: (relicId: string) => void;
   onUnequipRelic: (relicId: string) => void;
   onSellRelic: (relicId: string) => void;
-  onOpenYojefMarket: () => void;
 }
 
 export const Inventory: React.FC<InventoryProps> = ({
@@ -32,7 +31,6 @@ export const Inventory: React.FC<InventoryProps> = ({
   onEquipRelic,
   onUnequipRelic,
   onSellRelic,
-  onOpenYojefMarket,
 }) => {
   const [activeTab, setActiveTab] = useState<'weapons' | 'armor' | 'relics'>('weapons');
 
@@ -239,7 +237,7 @@ export const Inventory: React.FC<InventoryProps> = ({
       {/* Equipped Relics */}
       <div>
         <h3 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
-          <Package className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
+          <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
           Equipped Relics ({inventory.equippedRelics.length}/5)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
@@ -288,7 +286,7 @@ export const Inventory: React.FC<InventoryProps> = ({
       {inventory.relics.filter(r => !inventory.equippedRelics.some(er => er.id === r.id)).length > 0 && (
         <div>
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
-            <Package className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
             Unequipped Relics
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
@@ -348,32 +346,24 @@ export const Inventory: React.FC<InventoryProps> = ({
       {/* Currently Equipped */}
       {renderEquippedSection()}
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation - Mobile responsive */}
       <div className="flex gap-2 mb-4">
         {[
           { key: 'weapons', label: 'Weapons', count: inventory.weapons.length, icon: Sword },
           { key: 'armor', label: 'Armor', count: inventory.armor.length, icon: Shield },
-          { key: 'relics', label: 'Relics', count: inventory.relics.length, icon: Book }
+          { key: 'relics', label: 'Relics', count: inventory.relics.length, icon: Shield }
         ].map(({ key, label, count, icon: Icon }) => (
           <button
             key={key}
-            onClick={() => {
-              if (key === 'relics') {
-                onOpenYojefMarket();
-              } else {
-                setActiveTab(key as any);
-              }
-            }}
+            onClick={() => setActiveTab(key as any)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
               activeTab === key
                 ? 'bg-purple-600 text-white'
-                : key === 'relics'
-                ? 'bg-indigo-600 text-white hover:bg-indigo-500'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
           >
             <Icon className="w-4 h-4" />
-            {label}
+            <span className="hidden sm:inline">{label}</span>
             <span className="bg-black/30 px-2 py-0.5 rounded-full text-xs">
               {count}
             </span>
@@ -421,14 +411,14 @@ export const Inventory: React.FC<InventoryProps> = ({
       {activeTab === 'relics' && (
         <div>
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
-            <Package className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
             Ancient Relics ({inventory.relics.length})
           </h3>
           {inventory.relics.length > 0 ? (
             renderRelicGrid()
           ) : (
             <div className="text-center py-8">
-              <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+              <Shield className="w-16 h-16 text-gray-500 mx-auto mb-4" />
               <p className="text-gray-400 text-lg">No relics found</p>
               <p className="text-gray-500 text-sm">Visit the Yojef Market to find ancient relics!</p>
             </div>

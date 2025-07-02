@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mining as MiningType } from '../types/game';
-import { Gem, Coins, Zap, Star, X, Sparkles } from 'lucide-react';
+import { Gem, Coins, Sparkles, X } from 'lucide-react';
 
 interface MiningProps {
   mining: MiningType;
@@ -35,7 +35,7 @@ export const Mining: React.FC<MiningProps> = ({
 
   // Generate new gem node
   const generateGemNode = () => {
-    const isShiny = Math.random() < 0.1; // 10% chance for shiny gem (reduced from 30%)
+    const isShiny = Math.random() < 0.05; // 5% chance for shiny gem
     const newNode: GemNode = {
       x: Math.floor(Math.random() * GRID_SIZE),
       y: Math.floor(Math.random() * GRID_SIZE),
@@ -63,6 +63,7 @@ export const Mining: React.FC<MiningProps> = ({
 
     setLastMineTime(now);
 
+    // Fixed mining logic - shiny nodes give shiny gems, normal nodes give normal gems
     const result = onMineGem(x, y);
     if (result) {
       setGemNodes(prev => {
@@ -134,10 +135,6 @@ export const Mining: React.FC<MiningProps> = ({
             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="font-semibold text-sm sm:text-base">{shinyGems} Shiny</span>
           </div>
-          <div className="flex items-center gap-2 text-orange-300">
-            <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="font-semibold text-sm sm:text-base">Efficiency: {mining.efficiency}</span>
-          </div>
         </div>
       </div>
 
@@ -148,7 +145,7 @@ export const Mining: React.FC<MiningProps> = ({
           {renderMiningGrid()}
         </div>
         <div className="text-center text-gray-400 text-xs sm:text-sm mt-3 space-y-1">
-          <p>Purple gems = 1 gem each | Golden gems = 10 gems each (10% chance)</p>
+          <p>Purple gems = 1 gem each | Golden gems = 1 shiny gem each (5% chance)</p>
           <p>Click once to mine instantly!</p>
         </div>
       </div>

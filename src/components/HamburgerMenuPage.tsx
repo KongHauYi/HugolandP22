@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Sprout, BarChart3, Trophy, TrendingUp, Settings, ArrowLeft, Code } from 'lucide-react';
+import { Sprout, BarChart3, Trophy, TrendingUp, Settings, ArrowLeft, Code, Zap, Package } from 'lucide-react';
 import { GardenOfGrowth } from './GardenOfGrowth';
 import { Statistics } from './Statistics';
 import { Achievements } from './Achievements';
 import { ProgressionPanel } from './ProgressionPanel';
 import { GameSettings } from './GameSettings';
 import { DevTools } from './DevTools';
+import { Skills } from './Skills';
+import { YojefMarket } from './YojefMarket';
 import { GameState, GameSettings as SettingsType } from '../types/game';
 
 interface HamburgerMenuPageProps {
@@ -19,6 +21,8 @@ interface HamburgerMenuPageProps {
   onAddGems: (amount: number) => void;
   onTeleportToZone: (zone: number) => void;
   onSetExperience: (xp: number) => void;
+  onRollSkill: () => boolean;
+  onPurchaseRelic: (relicId: string) => boolean;
   onBack: () => void;
 }
 
@@ -33,9 +37,11 @@ export const HamburgerMenuPage: React.FC<HamburgerMenuPageProps> = ({
   onAddGems,
   onTeleportToZone,
   onSetExperience,
+  onRollSkill,
+  onPurchaseRelic,
   onBack
 }) => {
-  const [activeSection, setActiveSection] = useState<'garden' | 'stats' | 'achievements' | 'progression' | 'settings' | 'devtools' | null>(null);
+  const [activeSection, setActiveSection] = useState<'garden' | 'stats' | 'achievements' | 'progression' | 'settings' | 'devtools' | 'skills' | 'yojef' | null>(null);
 
   const menuItems = [
     {
@@ -47,6 +53,26 @@ export const HamburgerMenuPage: React.FC<HamburgerMenuPageProps> = ({
       borderColor: 'border-green-500/50',
       description: 'Grow plants for permanent stat bonuses',
       status: gameState.gardenOfGrowth.isPlanted ? `${gameState.gardenOfGrowth.growthCm.toFixed(1)}cm grown` : 'Not planted'
+    },
+    {
+      id: 'skills',
+      name: 'Menu Skills',
+      icon: Zap,
+      color: 'text-purple-400',
+      bgColor: 'from-purple-900/50 to-indigo-900/50',
+      borderColor: 'border-purple-500/50',
+      description: 'Roll for powerful temporary abilities',
+      status: gameState.skills.activeMenuSkill ? `${gameState.skills.activeMenuSkill.name} active` : 'No active skill'
+    },
+    {
+      id: 'yojef',
+      name: 'Yojef Market',
+      icon: Package,
+      color: 'text-indigo-400',
+      bgColor: 'from-indigo-900/50 to-purple-900/50',
+      borderColor: 'border-indigo-500/50',
+      description: 'Ancient relics and artifacts',
+      status: `${gameState.yojefMarket.items.length} relics available`
     },
     {
       id: 'stats',
@@ -112,6 +138,26 @@ export const HamburgerMenuPage: React.FC<HamburgerMenuPageProps> = ({
             onClose={() => setActiveSection(null)}
           />
         );
+      case 'skills':
+        return (
+          <Skills
+            skills={gameState.skills}
+            coins={gameState.coins}
+            onRollSkill={onRollSkill}
+            onClose={() => setActiveSection(null)}
+          />
+        );
+      case 'yojef':
+        return (
+          <YojefMarket
+            relicItems={gameState.yojefMarket.items}
+            gems={gameState.gems}
+            equippedRelicsCount={gameState.inventory.equippedRelics.length}
+            onPurchaseRelic={onPurchaseRelic}
+            onClose={() => setActiveSection(null)}
+            nextRefresh={gameState.yojefMarket.nextRefresh}
+          />
+        );
       case 'stats':
         return (
           <Statistics
@@ -172,8 +218,8 @@ export const HamburgerMenuPage: React.FC<HamburgerMenuPageProps> = ({
         <p className="text-gray-300">Access special features and advanced settings</p>
       </div>
 
-      {/* Menu Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* Menu Grid - Responsive */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -183,11 +229,11 @@ export const HamburgerMenuPage: React.FC<HamburgerMenuPageProps> = ({
               className={`p-4 sm:p-6 bg-gradient-to-br ${item.bgColor} rounded-lg border-2 ${item.borderColor} hover:scale-105 transition-all duration-200 text-left group shadow-lg`}
             >
               <div className="flex items-center gap-3 mb-3">
-                <Icon className={`w-8 h-8 ${item.color} group-hover:scale-110 transition-transform`} />
-                <h3 className="text-white font-bold text-lg">{item.name}</h3>
+                <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${item.color} group-hover:scale-110 transition-transform`} />
+                <h3 className="text-white font-bold text-sm sm:text-lg">{item.name}</h3>
               </div>
               
-              <p className="text-gray-300 text-sm mb-3">{item.description}</p>
+              <p className="text-gray-300 text-xs sm:text-sm mb-3">{item.description}</p>
               
               <div className="bg-black/30 p-2 rounded-lg">
                 <p className={`text-xs font-semibold ${item.color}`}>{item.status}</p>
