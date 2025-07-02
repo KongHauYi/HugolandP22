@@ -62,7 +62,7 @@ export const HamburgerMenuPage: React.FC<HamburgerMenuPageProps> = ({
       bgColor: 'from-purple-900/50 to-indigo-900/50',
       borderColor: 'border-purple-500/50',
       description: 'Roll for powerful temporary abilities',
-      status: gameState.skills.activeMenuSkill ? `${gameState.skills.activeMenuSkill.name} active` : 'No active skill'
+      status: gameState.skills?.activeMenuSkill ? `${gameState.skills.activeMenuSkill.name} active` : 'No active skill'
     },
     {
       id: 'yojef',
